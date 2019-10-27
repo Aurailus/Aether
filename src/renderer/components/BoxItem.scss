@@ -1,0 +1,78 @@
+@import '../vars';
+
+.BoxItem {
+  display: block;
+  margin: 0px;
+  width: 100%;
+  height: auto;
+  margin-top: 4px;
+  position: relative;
+
+  color: #fff;
+
+  & > h3 {
+    // background-color: $gray-3;
+    // border-radius: 4px;
+
+    vertical-align: -25%;
+    font-family: $body-font-family;
+    font-weight: 400;
+    font-size: 16px;
+    opacity: 0.8;
+    margin: 0;
+    padding: 3px 6px 5px 23px;
+  }
+}
+
+.BoxItem-unreadIndicator {
+  position: absolute;
+  top: 8px;
+  right: 6px;
+  background-color: #fff8;
+  color: $gray-0;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 0px 8px;
+  border-radius: 7.5px;
+}
+
+.BoxItem-toggleOpen {
+  position: absolute;
+  left: -4px;
+  top: 1px;
+  width: 28px;
+  height: 28px;
+  opacity: 0.4;
+  transition: transform 0.25s cubic-bezier(0.32, 0.4, 0.39, 1.51);
+  transform: rotate(-90deg);
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+  }
+
+  &.open {
+    transform: rotate(0deg);
+  }
+}
+
+.BoxItem-icon {
+  box-sizing: content-box;
+  vertical-align: -25%;
+  opacity: 0.8;
+  width: 24px;
+  height: 24px;
+  padding-right: 5px;
+}
+
+.BoxItem-subList {
+  padding-left: 16px;
+  height: 0;
+  opacity: 0;
+  overflow: hidden;
+}
+
+.BoxItem.open > .BoxItem-subList {
+  height: auto;
+  opacity: 1;
+}

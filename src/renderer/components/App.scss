@@ -1,0 +1,11 @@
+@import '../vars';
+
+.App {
+  background-color: $gray-2;
+  grid-template-columns: 72px 1fr;
+  display: grid;
+  overflow: hidden;
+
+  width: 100%;
+  height: 100vh;
+}

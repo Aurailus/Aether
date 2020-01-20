@@ -58,7 +58,7 @@ export class BoxItem extends React.Component<BoxItemProps, State> {
           <img className="BoxItem-icon" src={this.props.icon} />
           {this.props.name}
         </h3>
-        <span className="BoxItem-unreadIndicator">9</span>
+        <span className="BoxItem-unreadIndicator">6</span>
         {this.props.children.length > 0 && (
           <>
             <img

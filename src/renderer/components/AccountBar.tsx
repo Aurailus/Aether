@@ -3,11 +3,11 @@ import * as React from 'react';
 import './AccountBar.scss';
 
 import { ALL_ACCOUNT_ID } from './App';
-import { ImapAccount } from '../../data/ImapAccount';
+import { AccountProps } from '../../data/AccountProps';
 import { AccountIcon } from './AccountIcon';
 
 interface Props {
-    accounts: { [key: string]: ImapAccount };
+    accounts: { [key: string]: AccountProps };
     activeAccount: string;
     onClick: (id: string, e: React.SyntheticEvent) => void;
 }

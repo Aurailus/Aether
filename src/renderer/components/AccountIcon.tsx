@@ -2,10 +2,10 @@ import * as React from 'react';
 
 import './AccountIcon.scss';
 
-import { ImapAccount } from '../../data/ImapAccount';
+import { AccountProps } from '../../data/AccountProps';
 
 interface Props {
-    account: ImapAccount;
+    account: AccountProps;
     active: boolean;
     hasUnread: boolean;
     onClick: (e: React.SyntheticEvent) => void;

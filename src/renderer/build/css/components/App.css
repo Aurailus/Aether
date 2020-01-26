@@ -1,0 +1,7 @@
+.App {
+  background-color: #28292d;
+  grid-template-columns: 72px 1fr;
+  display: grid;
+  overflow: hidden;
+  width: 100%;
+  height: 100vh; }

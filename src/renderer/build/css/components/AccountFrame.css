@@ -1,12 +1,8 @@
-@import '../vars';
-
 .AccountFrame {
-  background-color: $gray-2;
+  background-color: #28292d;
   grid-template-columns: 280px 1fr;
   display: grid;
   overflow: hidden;
   position: relative;
-
   width: 100%;
-  height: 100%;
-}
+  height: 100%; }

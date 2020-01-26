@@ -1,0 +1,21 @@
+@import '../vars';
+
+.ActiveConversationList {
+  padding: 16px;
+  overflow: auto;
+  height: calc(100vh - #{$header-height});
+
+  @include scroll-bar;
+
+  & > p {
+  	color: #fff;
+  	line-height: 3em;
+  }
+}
+
+.ActiveConversationList-messageFrame {
+	width: 100%;
+	display: block;
+	border: none;
+	// background-color: #666;
+}

@@ -118,11 +118,15 @@
     "webpack-merge": "^4.2.1"
   },
   "dependencies": {
+    "@types/quoted-printable": "^0.2.2",
+    "@types/react-addons-css-transition-group": "^15.0.5",
     "imap": "^0.8.19",
-    "imap-promise": "^1.0.2",
+    "quoted-printable": "^1.0.1",
     "react": "^16.8.6",
+    "react-addons-css-transition-group": "^15.6.2",
     "react-dom": "^16.8.6",
+    "react-electron-web-view": "^2.0.1",
     "react-redux": "^7.0.3",
-    "redux": "^4.0.1"
+    "react-transition-group": "^4.3.0"
   }
 }

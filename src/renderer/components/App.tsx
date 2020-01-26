@@ -55,11 +55,13 @@ export class App extends React.Component<{}, State> {
   }
 
   accountClickHandler(id: string, e: React.SyntheticEvent) {
-    const accounts = Object.assign({}, this.state.accounts);
-    if (accounts[id]) accounts[id].hasUnread = false;
+    if (this.state.activeAccount != id) {
+      const accounts = Object.assign({}, this.state.accounts);
+      if (accounts[id]) accounts[id].hasUnread = false;
 
-    this.setState({ accounts, activeAccount: id });
-    ipcRenderer.send('account-open', id);
+      this.setState({ accounts, activeAccount: id });
+      ipcRenderer.send('account-open', id);
+    }
   }
 
   render() {

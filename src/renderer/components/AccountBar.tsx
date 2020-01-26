@@ -17,26 +17,26 @@ export class AccountBar extends React.Component<Props, {}> {
       super(props);
   }
 
-    handleClick(id: string, e: React.SyntheticEvent) {
-      this.props.onClick(id, e);
+  handleClick(id: string, e: React.SyntheticEvent) {
+    this.props.onClick(id, e);
   }
 
-    render() {
-      if (this.props.accounts[ALL_ACCOUNT_ID]) {
-        let unreads: boolean = false;
-        for (const acct in this.props.accounts) {
-          if (acct === ALL_ACCOUNT_ID) continue;
-          if (this.props.accounts[acct].hasUnread) {
-            unreads = true;
-            break;
+  render() {
+    if (this.props.accounts[ALL_ACCOUNT_ID]) {
+      let unreads: boolean = false;
+      for (const acct in this.props.accounts) {
+        if (acct === ALL_ACCOUNT_ID) continue;
+        if (this.props.accounts[acct].hasUnread) {
+          unreads = true;
+          break;
         }
       }
-        this.props.accounts[ALL_ACCOUNT_ID].hasUnread = unreads;
+      this.props.accounts[ALL_ACCOUNT_ID].hasUnread = unreads;
     }
 
-      const allAcct = this.props.accounts[ALL_ACCOUNT_ID];
+    const allAcct = this.props.accounts[ALL_ACCOUNT_ID];
 
-      return (
+    return (
       <div className="AccountBar">
         <ul>
           {this.props.accounts[ALL_ACCOUNT_ID] != null && (

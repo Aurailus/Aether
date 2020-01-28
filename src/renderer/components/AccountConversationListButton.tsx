@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import './ConversationListButton.scss';
+import './AccountConversationListButton.scss';
 
 export interface ConversationListButtonProps {
     title: string,
@@ -8,16 +8,16 @@ export interface ConversationListButtonProps {
     onClick: () => void;
 }
 
-export class ConversationListButton extends React.Component<ConversationListButtonProps, {}> {
+export class AccountConversationListButton extends React.Component<ConversationListButtonProps, {}> {
   constructor(props: ConversationListButtonProps) {
     super(props);
   }
 
   render() {
     return (
-      <div className="ConversationListButton" onClick={this.props.onClick}>
+      <div className="AccountConversationListButton" onClick={this.props.onClick}>
         <img src={this.props.icon} />
-        <div className="ConversationListButton-content">  
+        <div className="AccountConversationListButton-content">  
           <h3>{this.props.title}</h3>
         </div>
       </div>

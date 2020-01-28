@@ -1,8 +1,0 @@
-.AccountFrame {
-  background-color: #28292d;
-  grid-template-columns: 280px 1fr;
-  display: grid;
-  overflow: hidden;
-  position: relative;
-  width: 100%;
-  height: 100%; }

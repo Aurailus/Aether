@@ -1,7 +1,7 @@
 import * as React from 'react';
 import ReactCSSTransitionGroup from 'react-addons-css-transition-group';
 
-import './ConversationList.scss';
+import './AccountConversationList.scss';
 
 import { BoxItem } from './BoxItem';
 import { ImapBox } from '../../data/ImapBox';
@@ -9,9 +9,11 @@ import { BoxStructure } from '../BoxStructure';
 import { MessageHeader } from '../../data/MessageHeader';
 import { MessageConversation } from '../../data/MessageConversation';
 
+import * as FormatDate from '../../util/FormatDate';
+
 import { ConversationDateHeader } from './ConversationDateHeader';
-import { ConversationListButton } from './ConversationListButton';
-import { ConversationItem } from './ConversationItem';
+import { AccountConversationListButton } from './AccountConversationListButton';
+import { AccountConversationItem } from './AccountConversationItem';
 import { LoadingSpinner } from './LoadingSpinner';
 
 // const convsIcon = require('../../../res/icon-user-group.svg');
@@ -35,9 +37,7 @@ interface Props {
     convClicked: (message: MessageConversation) => void;
 }
 
-export class ConversationList extends React.Component<Props, {}> {
-  private monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-
+export class AccountConversationList extends React.Component<Props, {}> {
   constructor(props: Props) {
     super(props);
 
@@ -56,15 +56,6 @@ export class ConversationList extends React.Component<Props, {}> {
 
   boxesClicked() {
     console.log('boxes clicked');
-  }
-
-
-  private addSuffixToNumber(i: number) {
-    let j = i % 10, k = i % 100;
-    if (j == 1 && k != 11) return i + "st";
-    if (j == 2 && k != 12) return i + "nd";
-    if (j == 3 && k != 13) return i + "rd";
-    return i + "th";
   }
 
   private getHeader(date: Date, lastDate: Date | null): string {
@@ -88,7 +79,7 @@ export class ConversationList extends React.Component<Props, {}> {
     let dateMonth = date.getMonth() + date.getFullYear()*12;
     
     if (!lastDate || lastDate.getMonth() + lastDate.getFullYear()*12 > dateMonth) {
-      return this.monthNames[date.getMonth()] + (date.getFullYear() != test.getFullYear() ? " " + date.getFullYear() : "");
+      return FormatDate.months[date.getMonth()] + (date.getFullYear() != test.getFullYear() ? " " + date.getFullYear() : "");
     }
 
     return "";
@@ -98,8 +89,8 @@ export class ConversationList extends React.Component<Props, {}> {
     let lastDate: Date | null = null;
 
     return (
-      <aside className="ConversationList">
-        <div className="ConversationList-header">
+      <aside className="AccountConversationList">
+        <div className="AccountConversationList-header">
           <h1>{this.props.accountName}</h1>
           <h2>{this.props.accountEmail}</h2>
 
@@ -109,14 +100,14 @@ export class ConversationList extends React.Component<Props, {}> {
           />
         </div>
 
-        <ul className="ConversationList-list">
-          <ConversationListButton
+        <ul className="AccountConversationList-list">
+          <AccountConversationListButton
             key="__archived"
             title="Archived"
             icon={archiveIcon}
             onClick={this.archivedClicked}
           />
-          <ConversationListButton
+          <AccountConversationListButton
             key="__boxes"
             title="Boxes"
             icon={folderIcon}
@@ -124,7 +115,7 @@ export class ConversationList extends React.Component<Props, {}> {
           />
 
           <ReactCSSTransitionGroup
-            transitionName="ConversationList-transition"
+            transitionName="AccountConversationList-transition"
             transitionEnterTimeout={200}
             transitionLeaveTimeout={200}
           >
@@ -138,7 +129,7 @@ export class ConversationList extends React.Component<Props, {}> {
               let returns: any[] = [];
               if (header) returns.push(<ConversationDateHeader key={new Date(conv.headers[0].date).getTime()} header={header} />);
               returns.push((
-                <ConversationItem
+                <AccountConversationItem
                   key={ind}
                   conversation={conv}
                   hasUnread={true}

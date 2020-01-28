@@ -1,6 +1,6 @@
 @import '../vars';
 
-.ConversationList {
+.AccountConversationList {
   display: block;
   width: 100%;
   height: 100%;
@@ -8,29 +8,29 @@
   background-color: $gray-1;
 }
 
-.ConversationList-transition-enter {
+.AccountConversationList-transition-enter {
   opacity: 0.01;
   transform: translateY(4px);
 
-  &.ConversationList-transition-enter-active {
+  &.AccountConversationList-transition-enter-active {
     opacity: 1;
     transform: translateY(0);
     transition: opacity 0.2s, transform 0.2s;
   }
 }
 
-.ConversationList-transition-leave {
+.AccountConversationList-transition-leave {
   opacity: 1;
   transform: translateY(0);
 
-  &.ConversationList-transition-leave-active {
+  &.AccountConversationList-transition-leave-active {
     opacity: 0.01;
     transform: translateY(4px);
     transition: opacity 0.2s, transform 0.2s 0.05s;
   }
 }
 
-.ConversationList-header {
+.AccountConversationList-header {
   display: block;
   width: 100%;
   height: $header-height;
@@ -71,7 +71,7 @@
   }
 }
 
-.ConversationList-list {
+.AccountConversationList-list {
   padding: 8px;
   overflow: auto;
   height: calc(100vh - #{$header-height});
@@ -79,16 +79,16 @@
   @include scroll-bar;
 }
 
-.ConversationList-specialBoxes {
+.AccountConversationList-specialBoxes {
   padding-bottom: 16px;
 }
 
-.ConversationList-otherBoxes {
+.AccountConversationList-otherBoxes {
   padding-top: 12px;
   border-top: 2px solid #444;
 }
 
-.ConversationList-otherBoxLabel {
+.AccountConversationList-otherBoxLabel {
   color: #fff;
   font-family: $body-font-family;
   opacity: 0.5;

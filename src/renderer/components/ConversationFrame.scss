@@ -1,0 +1,43 @@
+.ConversationFrame {
+	display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+	width: 100%;
+  overflow: hidden;
+
+	.ConversationFrame-icon {
+    display: inline-block;
+    height: 48px;
+    width: 48px;
+    margin: 0px 16px 0px 0px;
+    border-radius: 50%;
+    vertical-align: top;
+    user-select: none;
+	}
+
+	.ConversationFrame-details {
+		margin: 0;
+		margin-bottom: 6px; 
+    user-select: none;
+
+		.ConversationFrame-sender {
+			font-weight: 600;
+			font-size: 16px;
+			color: #fff;
+		}
+
+		.ConversationFrame-sent {
+			font-size: 12px;
+			text-align: baseline;
+			padding-left: 4px;
+			color: #999;
+		}
+	}
+
+	.ConversationFrame-iframe {
+		width: 100%;
+		min-width: 0;
+		display: block;
+		border: none;
+		user-select: none;
+	}
+}

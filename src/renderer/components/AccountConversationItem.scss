@@ -1,6 +1,6 @@
 @import '../vars';
 
-.ConversationItem {
+.AccountConversationItem {
   display: block;
   margin: 0px;
   width: 100%;
@@ -36,7 +36,7 @@
   }
 }
 
-.ConversationItem-content {
+.AccountConversationItem-content {
   display: inline-block;
   width: calc(100% - 36px);
   padding-left: 12px;
@@ -75,9 +75,9 @@
   }
 }
 
-.ConversationItem-unreadIndicator {
+.AccountConversationItem-unreadIndicator {
   position: absolute;
-  bottom: 0px;
+  bottom: 2px;
   left: 24px;
   background-color: #999;
   color: $gray-0;

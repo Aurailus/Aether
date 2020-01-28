@@ -1,11 +1,8 @@
 const Imap = require('imap');
 const fs = require('fs').promises;
 const { ipcMain } = require('electron');
+const util = require('util');
 import { simpleParser } from 'mailparser'
-
-
-// const simpleParser = require('mailparser-mit').simpleParser;
-// console.log('printing stuff', simpleParser);
 
 import { ImapBox } from '../../data/ImapBox';
 import { ImapConnection } from '../../data/ImapConnection';
@@ -149,12 +146,12 @@ export class App {
 
 		let fromName = (rawHeader.from ? rawHeader.from.join() : "");
 		let endIndex = (Math.max(fromName.indexOf("<"), 0) || fromName.length);
-		fromName = fromName.substr(0, endIndex).replace(/([\"\'])+/g, "");
+		fromName = fromName.substr(0, endIndex).replace(/([\"\<\>\'])+/g, "");
 
 		let date = Date.parse(rawHeader.date.join(""));
 
 		let topic = (rawHeader.subject ? rawHeader.subject.join() : "No Topic");
-		topic = topic.replace(/^([Rr][Ee][: ]+)+/g, "");
+		topic = topic.replace(/^((re|fwd|fw)[: ]+)+/gi, "");
 
 		return {
 		  to: toName,
@@ -230,6 +227,9 @@ export class App {
 			conversation.contents[ans[1]].body = ans[0];
 		}
 
+		// Strip introductions regex: /(^(Hey|Hello|Hi) *(there|everyone|everybody|guys|gals|girls|dudes|people|friends|NAMES)*[\.,:]*[\n\s]+)/gim
+		// Strip signatures regex: /[\n\s]+(thanks|thank you)+.*/gims
+		// Strip conversation history regex: /(From:|On)[ \w]+([\[<].+[\]>]|\d{2,4}-\d{2,4}-\d{2,4}|[ \w,\.]{1,10}\d{2,4}).*/gims
 		return;
 	}
 }

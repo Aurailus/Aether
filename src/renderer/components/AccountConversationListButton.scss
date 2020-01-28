@@ -1,6 +1,6 @@
 @import '../vars';
 
-.ConversationListButton {
+.AccountConversationListButton {
   display: block;
   margin: 0px;
   width: 100%;
@@ -33,7 +33,7 @@
   }
 }
 
-.ConversationListButton-content {
+.AccountConversationListButton-content {
   display: inline-block;
   width: calc(100% - 36px);
   padding-left: 12px;

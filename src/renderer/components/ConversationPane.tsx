@@ -2,7 +2,7 @@ import * as React from 'react';
 
 import './ConversationPane.scss';
 
-import { ActiveConversationList } from './ActiveConversationList';
+import { ConversationFeed } from './ConversationFeed';
 
 import { MessageConversation } from '../../data/MessageConversation';
 
@@ -23,7 +23,7 @@ export class ConversationPane extends React.Component<Props, {}> {
 	        <h2>{(!this.props.conversation || this.props.conversation.headers.length == 0) ? "" : this.props.conversation.headers[0].from}</h2>
 	      </div>
 	      {(this.props.conversation != null && this.props.conversation.contents.length > 0) && (
-      		<ActiveConversationList conversation={this.props.conversation}/>
+      		<ConversationFeed conversation={this.props.conversation}/>
       	)}
 	    </aside>
 	  );

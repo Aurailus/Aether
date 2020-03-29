@@ -1,4 +1,9 @@
+# Node modules
 node_modules/
+
+# Compiled releases
 dist/
 release/
+
+# Private user information such as credentials (temporary)
 data/

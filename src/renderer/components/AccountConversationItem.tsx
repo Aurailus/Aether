@@ -5,7 +5,6 @@ import { MessageHeader } from '../../data/MessageHeader';
 import { MessageConversation } from '../../data/MessageConversation';
 
 const convIcon = require('../../../res/all-mail.svg');
-const subjectIcon = require('../../../res/icon-tag.svg');
 
 export interface AccountConversationItemProps {
     conversation: MessageConversation;

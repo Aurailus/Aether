@@ -7,7 +7,7 @@ import { ALL_ACCOUNT_ID } from './App';
 import { BoxStructure } from '../BoxStructure';
 
 import { LoadingSpinner } from './LoadingSpinner';
-import { AccountConversationList } from './AccountConversationList';
+import { AccountConversationBar } from './AccountConversationBar';
 import { ConversationPane } from './ConversationPane';
 
 import { ImapBox } from '../../data/ImapBox';
@@ -49,9 +49,9 @@ export class AccountFrame extends React.Component<Props, State> {
   render() {
     return (
       <div className="AccountFrame">
-        <AccountConversationList
+        <AccountConversationBar
           accountName={this.props.account.name}
-          accountEmail={this.props.account.email}
+          accountEmail={this.props.account.address}
           conversations={this.state.conversations}
           activeConversation={this.state.activeConversation}
           convClicked={this.convClicked}

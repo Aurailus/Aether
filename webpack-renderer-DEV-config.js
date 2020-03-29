@@ -1,14 +1,18 @@
+//
+// Set up the hot loader for the electron renderer thread.
+// This will also start the main process as a precursor to the devServer initialization.
+//
+
 const merge = require('webpack-merge');
 const spawn = require('child_process').spawn;
 
-const baseConfig = require('./webpack.renderer.config');
-
-module.exports = merge.smart(baseConfig, {
+module.exports = merge.smart(require('./webpack-renderer-config'), {
     resolve: {
         alias: {
             'react-dom': '@hot-loader/react-dom'
         }
     },
+
     devServer: {
         port: 2003,
         compress: true,
@@ -21,6 +25,7 @@ module.exports = merge.smart(baseConfig, {
             verbose: true,
             disableDotRule: false
         },
+
         before() {
             if (process.env.START_HOT) {
                 console.log('Starting main process');
@@ -29,8 +34,8 @@ module.exports = merge.smart(baseConfig, {
                     env: process.env,
                     stdio: 'inherit'
                 })
-                    .on('close', code => process.exit(code))
-                    .on('error', spawnError => console.error(spawnError));
+                .on('close', code => process.exit(code))
+                .on('error', spawnError => console.error(spawnError));
             }
         }
     }

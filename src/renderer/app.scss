@@ -20,29 +20,9 @@ ul {
 }
 
 button {
-  background-color: #5a6163;
-  color: rgba(255, 255, 255, 0.75);
-  border: none;
-  border-radius: 4px;
-  padding: 8px 12px;
-  font-size: 18px;
-  font-family: $body-font-family;
-  margin: 8px;
+  padding: 0;
   outline: 0;
+  border: none;
+  background-color: transparent;
   cursor: pointer;
-  box-shadow: 0px 2px 12px 0px rgba(0, 0, 0, 0.1);
-
-  transition: filter 0.2s, box-shadow 0.2s;
-
-  &:hover,
-  &:focus {
-    filter: brightness(110%);
-    box-shadow: 0px 3px 16px 0px rgba(0, 0, 0, 0.2);
-  }
-
-  &:hover:active,
-  &:focus:active {
-    filter: brightness(90%);
-    box-shadow: 0px 1px 8px 0px rgba(0, 0, 0, 0.2);
-  }
 }

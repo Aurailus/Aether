@@ -1,0 +1,212 @@
+import { WebContents, ipcMain as recv } from 'electron';
+import { simpleParser } from 'mailparser'
+
+import { ImapAccount } from './ImapAccount';
+import { MessageHeader } from '../../data/MessageHeader';
+import { MessageConversation } from '../../data/MessageConversation';
+
+export class AccountManager {
+	private send: WebContents;
+
+	private accounts: {[key: string]: ImapAccount} = {};
+	private currentAccount: ImapAccount | null = null;
+
+	constructor(send: WebContents) {
+		this.send = send;
+
+		recv.on('account-open', (event: Electron.IpcMessageEvent, acctId: string) => this.handleAccountOpen(acctId));
+		// recv.on('conversation-open', (event: Electron.IpcMessageEvent, conversationHeaders: MessageConversation) 
+		// 	=> this.handleConversationOpen(conversationHeaders));
+	}
+
+	async loadAccount(account: ImapAccount) {
+		this.accounts[account.props.address] = account;
+
+
+
+		this.send.send('account-add', account.props);
+
+		// Temporary to allow faster debugging
+		recv.on('reload', () => this.send.send('account-add', account.props));
+	}
+
+	handleAccountOpen(id: string) {
+		for (const address in this.accounts) {
+			let acct = this.accounts[address];
+			if (acct.props.id === id) { 
+				this.currentAccount = acct; 
+				break;
+			}
+		}
+		if (!this.currentAccount) return;
+		this.sendConversationHeaders();
+	}
+
+	async sendConversationHeaders() {
+		this.send.send('conversations', []);
+
+		// try {
+		// 	const conversations = await this.collectConversationHeaders();
+		// 	if (conversations) this.send.send('conversations', conversations);
+		// }
+		// catch(e) {
+		// 	console.log('Error getting messages: ', e);
+		// }
+	}
+
+	// async collectConversationHeaders() : Promise<MessageConversation[]> {
+	// 	let inboxHeaders: MessageHeader[] = [];
+	// 	let conversations: MessageConversation[] = [];
+			
+	// 	await this.currentConn!.openBox('INBOX');
+	// 	let uids: number[] = await this.currentConn!.getMessageUIDs();
+
+	// 	await this.currentConn!.getMessageHeaders(uids, (rawHeader: any, attrs: any) => {
+	// 		let header = this.processHeader(rawHeader, attrs);
+	// 		inboxHeaders.push(header);
+
+	// 		let foundConvo = false;
+	// 		for (let conversation of conversations) {
+	// 			if (conversation.headers[0].from == header.from) {
+	// 				conversation.headers.push(header);
+	// 				foundConvo = true;
+	// 				break;
+	// 			}
+	// 		}
+	// 		if (!foundConvo) conversations.push({headers: [header], contents: []});
+	// 	});
+
+	// 	await this.currentConn!.openBox('Trash');
+	// 	uids = await this.currentConn!.getMessageUIDs();
+
+	// 	await this.currentConn!.getMessageHeaders(uids, (rawHeader: any, attrs: any) => {
+	// 		let header = this.processHeader(rawHeader, attrs);
+
+	// 		for (let conversation of conversations) {
+	// 			if (conversation.headers[0].from == header.from) {
+	// 				conversation.headers.push(header);
+	// 				break;
+	// 			}
+	// 		}
+	// 	});
+
+	// 	await this.currentConn!.openBox('Sent Items');
+	// 	uids = await this.currentConn!.getMessageUIDs();
+
+	// 	await this.currentConn!.getMessageHeaders(uids, (rawHeader: any, attrs: any) => {
+	// 		let header = this.processHeader(rawHeader, attrs);
+
+	// 		for (let conversation of conversations) {
+	// 			if (conversation.headers[0].from == header.to) {
+	// 				conversation.headers.push(header);
+	// 				break;
+	// 			}
+	// 		}
+	// 	});
+		
+	// 	for (let conversation of conversations) {
+	// 		conversation.headers.sort((h1: MessageHeader, h2: MessageHeader): number => {
+	// 			return h2.date - h1.date;
+	// 		});
+	// 	}
+	// 	conversations.sort((c1: MessageConversation, c2: MessageConversation): number => {
+	// 		return c2.headers[0].date - c1.headers[0].date;
+	// 	});
+
+	// 	return conversations;
+	// }
+
+	// processHeader(rawHeader: any, attrs: any): MessageHeader {
+	// 	let toName = (rawHeader.to ? rawHeader.to.join() : "");
+	// 	let endIndex = (Math.max(toName.indexOf("<"), 0) || toName.length);
+	// 	toName = toName.substr(0, endIndex).replace(/([\"\<\>\'])+/g, "");
+
+	// 	let fromName = (rawHeader.from ? rawHeader.from.join() : "");
+	// 	endIndex = (Math.max(fromName.indexOf("<"), 0) || fromName.length);
+	// 	fromName = fromName.substr(0, endIndex).replace(/([\"\<\>\'])+/g, "");
+
+	// 	let date = Date.parse(rawHeader.date.join(""));
+
+	// 	let topic = (rawHeader.subject ? rawHeader.subject.join() : "No Topic");
+	// 	topic = topic.replace(/^((re|fwd|fw)[: ]+)+/gi, "").replace(/^\w/, (c: string) => c.toUpperCase());
+
+	// 	return {
+	// 	  to: toName,
+	// 	  from: fromName,
+	// 	  subject: topic,
+	// 	  date: date,
+
+	// 	  uid: attrs.uid,
+	// 	  box: this.currentConn!.getBox()
+	// 	};
+	// }
+
+	// async handleConversationOpen(conversationHeaders: MessageConversation) {
+	// 	this.send.send('conversation-bodies', conversationHeaders);
+
+	// 	try {
+	// 		await this.collectConversationBodies(conversationHeaders);
+	// 		this.send.send('conversation-bodies', conversationHeaders);
+	// 	}
+	// 	catch(e) {
+	// 		console.log('Error getting conversation bodies: ', e);
+	// 	}
+	// }
+
+	// async collectConversationBodies(conversation: MessageConversation) : Promise<void> {
+	// 	for (let i = 0; i < conversation.headers.length; i++) conversation.contents.push({ body: "", uid: -1 });
+		
+	// 	let box: string = "";
+
+	// 	// Collect all of the raw bodies for the messages.
+
+	// 	while(true) {
+	// 		for (let i = 0; i < conversation.headers.length; i++) {
+	// 			if (conversation.contents[i].uid == -1) {
+	// 				box = conversation.headers[i].box;
+	// 				break;
+	// 			}
+	// 		}
+
+	// 		if (box == "") break;
+
+	// 		let uids: number[] = [];
+
+	// 		for (let i = 0; i < conversation.headers.length; i++) {
+	// 			if (conversation.headers[i].box == box) {
+	// 				conversation.contents[i].uid = conversation.headers[i].uid;
+	// 				uids.push(conversation.headers[i].uid);
+	// 			}
+	// 		}
+
+	// 		await this.currentConn!.openBox(box);
+	// 		await this.currentConn!.getMessageContents(uids, (content: any, attrs: any) => {
+	// 			for (let i = 0; i < conversation.contents.length; i++) {
+	// 				if (conversation.contents[i].uid == attrs.uid) {
+	// 					conversation.contents[i].body = content;
+	// 				}
+	// 			}
+	// 		});
+
+	// 		box = "";
+	// 	}
+
+	// 	// Parse through all of the bodies asynchronously.
+
+	// 	let promises: any[] = [];
+	// 	for (let ind in conversation.contents) {
+	// 		promises.push(new Promise(async (resolve: (ret: any[]) => void, reject: () => void) => {
+	// 			resolve([await simpleParser(conversation.contents[ind].body, {}), ind]);
+	// 		}));
+	// 	}
+
+	// 	for (let ans of await Promise.all(promises)) {
+	// 		conversation.contents[ans[1]].body = ans[0];
+	// 	}
+
+	// 	// Strip introductions regex: /(^(Hey|Hello|Hi) *(there|everyone|everybody|guys|gals|girls|dudes|people|friends|NAMES)*[\.,:]*[\n\s]+)/gim
+	// 	// Strip signatures regex: /[\n\s]+(thanks|thank you)+.*/gims
+	// 	// Strip conversation history regex: /(From:|On)[ \w]+([\[<].+[\]>]|\d{2,4}-\d{2,4}-\d{2,4}|[ \w,\.]{1,10}\d{2,4}).*/gims
+	// 	return;
+	// }
+}

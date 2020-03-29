@@ -18,21 +18,56 @@ const styles = `
 body {
   margin: 0;
   padding: 0;
-  color: #ccc;
+  color: #bbb;
 }
 
-body, p {
-  font-family: "Roboto", sans-serif !important;
+body, p, p *, div, ol li, ul li {
+  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Oxygen', 'Ubuntu', 'Fira Sans', 'Helvetica Neue', sans-serif !important;
   font-size: 16px !important;
-  color: #ccc !important;
+  color: #bbb !important;
 
   margin: 0 0 0.4em 0 !important;
   line-height: 1.2em !important;
+  
+  word-wrap: break-word !important;
+  word-break: break-word !important;
+  text-align: left !important;
+}
+
+ul, ol {
+  padding-left: 16px !important;
+}
+
+a, a:link {
+  color: #80abeb !important;
+  text-decoration: underline !important;
+}
+
+a:focus {
+  color: #a1c0f0 !important;
+}
+
+a:hover {
+  color: #a7c5f2 !important;
+}
+
+a:active {
+  color: #b4c8e6 !important;
+}
+
+hr {
+  display: none !important;
 }
 
 /* Outlook Style Overrides */
+div[class^="WordSection"] > p.MsoNormal:empty, div[class^="WordSection"] > p.MsoNormal > span, div[class^="WordSection"] > li.MsoListParagraph {
+  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Oxygen', 'Ubuntu', 'Fira Sans', 'Helvetica Neue', sans-serif !important;
+  font-size: 16px !important;
+  color: #bbb !important;
 
-div[class^="WordSection"] > p.MsoNormal {
+  margin: 0 0 0.4em 0 !important;
+  line-height: 1.2em !important;
+  
   word-wrap: break-word !important;
   word-break: break-word !important;
   text-align: left !important;
@@ -59,8 +94,8 @@ export class ConversationFrame extends React.Component<Props, {}> {
   componentDidMount() {
     if (this.frame != null) {
       let message = this.props.content.body.html || this.props.content.body.textAsHtml;
-
-      console.log(message);
+      let toNamesSeperated = this.props.header.to.replace(/ /g, "|").replace(/[\|]+$/, "");
+      let fromNamesSeperated = this.props.header.from.replace(/ /g, "|").replace(/[\|]+$/, "");;
 
       /* Regex to strip introduction from the message.
       *
@@ -71,7 +106,10 @@ export class ConversationFrame extends React.Component<Props, {}> {
       *  .*?                                                              - Following characters until first instance of closing tag
       *  (?=\<\/.+\>)                                                     - Forward lookahead for a closing tag
       */
-      message = message.replace(/\>((Hey|Hello|Hi) +(there|everyone|everybody|guys|gals|girls|dudes|people|friends)?[\.,: ]*).*?(?=\<\/.+\>)/im, ">");
+      let re = new RegExp(`/\>((Hey|Hello|Hi|${toNamesSeperated}) +` +
+        `(there|everyone|everybody|guys|gals|girls|dudes|people|friends|${toNamesSeperated})?[\.,:! \n]*).*?(?=\<\/.+\>)/im`);
+
+      message = message.replace(re, ">");
 
       /* Regex to strip signature from the message.
       *
@@ -81,7 +119,10 @@ export class ConversationFrame extends React.Component<Props, {}> {
       *  (?=(\<[^\/]*\>)*?\<\/.+\>) - Following lookahead through only tags until a closing tag
       *  .+                         - Collect everything else to cut the rest of the message
       */
-      message = message.replace(/\>((thanks|thank|best) *(kindly|you so much|you)*[\.,: ]*)(?=(\<[^\/]*\>)*?\<\/.+\>).+/gims, ">");
+      re = new RegExp(`/\>((-|thanks|thank|best|kind|regards|${fromNamesSeperated}) *` +
+        `(kindly|you so much|so much|you|regards|again|${fromNamesSeperated})*[\.,:! \n]*)(?=(\<[^\/]*\>)*?\<\/.+\>).+/gims`);
+
+      message = message.replace(re, ">");
 
       // Strip double-spaces... why do people still do this?
       message = message.replace(/(\&nbsp;| ){2,}(?=[\w\.,:])/ig, " ");
@@ -94,6 +135,25 @@ export class ConversationFrame extends React.Component<Props, {}> {
       div.querySelectorAll('p').forEach((elem) => {
         if ((elem.textContent || "").trim() == "") elem.remove();
       });
+
+      // Remove blank BR divs / paras / whatever
+      div.querySelectorAll('br').forEach((elem) => {
+        if (elem.parentElement!.textContent!.trim() == "") {
+          elem.remove();
+        }
+      })
+
+      // Remove signature element (if it exists)
+      let sig = div.querySelector('#signature, #Signature, #SIGNATURE, .ms-outlook-ios-signature');
+      if (sig != null) {
+        while (sig.nextElementSibling != null) {
+          sig.nextElementSibling.remove();
+        }
+        sig.remove();
+      }
+
+      // Remove previous message element (Outlook Mobile)
+      div.querySelectorAll('hr + #divRplyFwdMsg, #divRplyFwdMsg, #divRplyFwdMsg ~ *').forEach(e => e.remove());
 
       message = div.innerHTML;
 

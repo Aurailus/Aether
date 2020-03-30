@@ -1,11 +1,8 @@
 import * as React from 'react';
-const { ipcRenderer } = require('electron');
 
 import './BoxItem.scss';
 const iconExpand = require('../../../res/icon-add.svg');
 const iconContract = require('../../../res/icon-subtract.svg');
-
-import { ImapBox } from '../../data/ImapBox';
 
 export interface BoxItemProps {
     name: string;

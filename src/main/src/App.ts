@@ -1,4 +1,4 @@
-const Imap = require('imap');
+// const Imap = require('imap');
 const fs = require('fs').promises;
 
 import { ImapAccount } from './ImapAccount';
@@ -26,11 +26,9 @@ export class App {
 
 		for (const serialized of serializedAccounts) {
 			const acct = new ImapAccount(serialized);
-			acct.connect().then(async () => {
-				await this.manager.loadAccount(acct);
-			})
+			acct.setup().then(() => acct.connect()).then(async () => this.manager.loadAccount(acct))
 			.catch((failedAcct: string) => {
-				console.log('Failed to connect to', failedAcct);
+				console.log('Failed to connect to account ', failedAcct);
 			});
 		}
 	}

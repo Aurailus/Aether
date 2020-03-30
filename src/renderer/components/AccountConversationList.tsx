@@ -4,10 +4,6 @@ import ReactCSSTransitionGroup from 'react-addons-css-transition-group';
 
 import './AccountConversationList.scss';
 
-import { BoxItem } from './BoxItem';
-import { ImapBox } from '../../data/ImapBox';
-import { BoxStructure } from '../BoxStructure';
-import { MessageHeader } from '../../data/MessageHeader';
 import { MessageConversation } from '../../data/MessageConversation';
 
 import * as FormatDate from '../../util/FormatDate';
@@ -15,7 +11,6 @@ import * as FormatDate from '../../util/FormatDate';
 import { ConversationDateHeader } from './ConversationDateHeader';
 import { AccountConversationListButton } from './AccountConversationListButton';
 import { AccountConversationItem } from './AccountConversationItem';
-import { LoadingSpinner } from './LoadingSpinner';
 
 const archiveIcon = require('../../../res/icon-box.svg');
 

@@ -1,7 +1,6 @@
 import * as React from 'react';
 import './AccountConversationBar.scss';
 
-import { MessageHeader } from '../../data/MessageHeader';
 import { MessageConversation } from '../../data/MessageConversation';
 
 import { AccountConversationList } from './AccountConversationList';

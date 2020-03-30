@@ -1,7 +1,6 @@
 import * as React from 'react';
 
 import './AccountConversationItem.scss';
-import { MessageHeader } from '../../data/MessageHeader';
 import { MessageConversation } from '../../data/MessageConversation';
 
 const convIcon = require('../../../res/all-mail.svg');

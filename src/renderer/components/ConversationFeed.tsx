@@ -16,10 +16,9 @@ export class ConversationFeed extends React.Component<Props, {}> {
     return (
     <main className="ConversationFeed">
       <ul>
-        {this.props.conversation.headers.slice(0).reverse().map((head, ind) => {
+        {this.props.conversation.headers.slice(0).reverse().map((head, ind): any | null => {
           ind = this.props.conversation.headers.length - ind - 1;
           if (this.props.conversation.contents.length > ind) {
-
             let returns: any[] = [];
             returns.push(<ConversationFrame key={ind} header={head} content={this.props.conversation.contents[ind]} />);
             if (ind > 0) returns.push(<hr className="ConversationFeed-hr" key={ind + "_hr"} />);

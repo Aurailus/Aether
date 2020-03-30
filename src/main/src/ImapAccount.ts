@@ -1,8 +1,8 @@
-import { ImapBox } from '../../data/ImapBox';
+import { ImapConn } from '../declarations/ImapConn';
+// import { ImapBox } from '../declarations/ImapBox';
+
 import { AccountProps } from '../../data/AccountProps';
 import { SerializedAccount } from '../../data/SerializedAccount';
-
-import { InternalImapConn } from '../declarations/InternalImapConn';
 
 import { LocalStore } from './LocalStore';
 
@@ -12,13 +12,13 @@ export class ImapAccount {
 	readonly props: AccountProps;
 
 	private localStore: LocalStore;
-	private conn: InternalImapConn;
-	private currentBox: string;
+	private conn: ImapConn;
+	// private currentBox: string;
 
 	constructor(props: SerializedAccount) {
 		this.conn = new Imap(props);
 
-		this.currentBox = "";
+		// this.currentBox = "";
 
 		this.props = {
 			id: props.id,
@@ -31,6 +31,10 @@ export class ImapAccount {
 		this.localStore = new LocalStore(this, this.conn);
 	}
 
+	async setup() {
+		await this.localStore.setup();
+	}
+
 	//
 	// Initialize the InternalImapConn connection, and then update the LocalStore cache. 
 	// Returns self on success, and the email address on failure.
@@ -38,9 +42,6 @@ export class ImapAccount {
 
 	connect(): Promise<ImapAccount> {
 		return new Promise((resolve: (conn: ImapAccount) => void, reject: (failedAccount: string) => void) => {
-
-			console.log('starting')
-
 			this.conn.once('ready', async () =>
 				this.localStore.updateCache().then(() => resolve(this))
 					.catch(reject.bind(this, this.props.address)))
@@ -51,14 +52,14 @@ export class ImapAccount {
 		});
 	}
 
-	getAllBoxes(): Promise<{[key: string]: ImapBox}> {
-		return new Promise((resolve: (boxes: {[key: string]: ImapBox}) => void, reject: (err: string) => void) => {
-			this.conn.getBoxes((err: string, boxes: {[key: string]: ImapBox}) => {
-				if (err) reject(err);
-				else resolve(boxes);
-			});
-		});
-	}
+	// getAllBoxes(): Promise<{[key: string]: ImapBox}> {
+	// 	return new Promise((resolve: (boxes: {[key: string]: ImapBox}) => void, reject: (err: string) => void) => {
+	// 		this.conn.getBoxes((err: string, boxes: {[key: string]: ImapBox}) => {
+	// 			if (err) reject(err);
+	// 			else resolve(boxes);
+	// 		});
+	// 	});
+	// }
 
 	// openBox(box: string): Promise<any> {
 	// 	this.currentBox = box;

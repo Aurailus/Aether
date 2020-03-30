@@ -52,7 +52,7 @@ export class AccountBar extends React.Component<Props, {}> {
             </>
           )}
 
-          {Object.keys(this.props.accounts).map((id, i) => {
+          {Object.keys(this.props.accounts).map((id) => {
               if (id === ALL_ACCOUNT_ID) return;
               const acct = this.props.accounts[id];
               return (

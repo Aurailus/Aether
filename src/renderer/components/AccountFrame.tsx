@@ -3,14 +3,10 @@ const { ipcRenderer } = require('electron');
 
 import './AccountFrame.scss';
 
-import { ALL_ACCOUNT_ID } from './App';
-import { BoxStructure } from '../BoxStructure';
-
 import { LoadingSpinner } from './LoadingSpinner';
 import { AccountConversationBar } from './AccountConversationBar';
 import { ConversationPane } from './ConversationPane';
 
-import { ImapBox } from '../../data/ImapBox';
 import { AccountProps } from '../../data/AccountProps';
 import { MessageConversation } from '../../data/MessageConversation';
 
@@ -27,8 +23,8 @@ export class AccountFrame extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = { conversations: [], activeConversation: null };
-    ipcRenderer.on('conversations', (event: Electron.IpcMessageEvent, conversations: MessageConversation[]) => this.handleConversations(conversations));
-    ipcRenderer.on('conversation-bodies', (event: Electron.IpcMessageEvent, conversation: MessageConversation) => this.handleConversationBodies(conversation));
+    ipcRenderer.on('conversations', (_event: Electron.IpcMessageEvent, conversations: MessageConversation[]) => this.handleConversations(conversations));
+    ipcRenderer.on('conversation-bodies', (_event: Electron.IpcMessageEvent, conversation: MessageConversation) => this.handleConversationBodies(conversation));
 
     this.convClicked = this.convClicked.bind(this);
   }

@@ -1,9 +1,9 @@
 import { WebContents, ipcMain as recv } from 'electron';
-import { simpleParser } from 'mailparser'
+// import { simpleParser } from 'mailparser'
 
 import { ImapAccount } from './ImapAccount';
-import { MessageHeader } from '../../data/MessageHeader';
-import { MessageConversation } from '../../data/MessageConversation';
+// import { MessageHeader } from '../../data/MessageHeader';
+// import { MessageConversation } from '../../data/MessageConversation';
 
 export class AccountManager {
 	private send: WebContents;
@@ -14,16 +14,13 @@ export class AccountManager {
 	constructor(send: WebContents) {
 		this.send = send;
 
-		recv.on('account-open', (event: Electron.IpcMessageEvent, acctId: string) => this.handleAccountOpen(acctId));
+		recv.on('account-open', (_event: Electron.IpcMessageEvent, acctId: string) => this.handleAccountOpen(acctId));
 		// recv.on('conversation-open', (event: Electron.IpcMessageEvent, conversationHeaders: MessageConversation) 
 		// 	=> this.handleConversationOpen(conversationHeaders));
 	}
 
 	async loadAccount(account: ImapAccount) {
 		this.accounts[account.props.address] = account;
-
-
-
 		this.send.send('account-add', account.props);
 
 		// Temporary to allow faster debugging

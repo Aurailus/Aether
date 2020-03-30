@@ -1,7 +1,7 @@
-import { ImapBox } from '../../data/ImapBox';
+import { ImapBox } from './ImapBox';
 import { SerializedAccount } from '../../data/SerializedAccount';
 
-export declare class InternalImapConn {
+export declare class ImapConn {
 	constructor(acct: SerializedAccount);
 
 	once(evt: any, fcn: any): any;
@@ -10,4 +10,9 @@ export declare class InternalImapConn {
 	openBox(box: string, readOnly: boolean, cb: (err: string, box: any) => void): void;
 	fetch(messages: number | string | number[], opts: any): any;
 	search(flags: string[], cb: (err: string, res: any) => void): void;
+
+	seq: {
+		fetch(messages: number | string | number[], opts: any): any;
+		search(flags: string[], cb: (err: string, res: any) => void): void;
+	}
 }

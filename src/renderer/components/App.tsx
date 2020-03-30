@@ -29,7 +29,7 @@ export class App extends React.Component<{}, State> {
     this.state = state;
 
     ipcRenderer.send('reload');
-    ipcRenderer.on('account-add', (event: Electron.IpcMessageEvent, arg: AccountProps) => this.addAccountHandler(arg));
+    ipcRenderer.on('account-add', (_event: Electron.IpcMessageEvent, arg: AccountProps) => this.addAccountHandler(arg));
 
     this.accountClickHandler = this.accountClickHandler.bind(this);
   }
@@ -54,7 +54,7 @@ export class App extends React.Component<{}, State> {
     this.setState({ accounts });
   }
 
-  accountClickHandler(id: string, e: React.SyntheticEvent) {
+  accountClickHandler(id: string, _: React.SyntheticEvent) {
     if (this.state.activeAccount != id) {
       const accounts = Object.assign({}, this.state.accounts);
       if (accounts[id]) accounts[id].hasUnread = false;

@@ -8,54 +8,55 @@ import { AccountConversationBar } from './AccountConversationBar';
 import { ConversationPane } from './ConversationPane';
 
 import { AccountProps } from '../../data/AccountProps';
-import { MessageConversation } from '../../data/MessageConversation';
+import { ConversationListing } from '../../data/ConversationListing';
 
 interface Props {
     account: AccountProps;
 }
 
 interface State {
-    conversations: MessageConversation[];
-    activeConversation: MessageConversation | null; 
+    conversations: ConversationListing[];
+    activeConv: number; 
 }
 
 export class AccountFrame extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
-    this.state = { conversations: [], activeConversation: null };
-    ipcRenderer.on('conversations', (_event: Electron.IpcMessageEvent, conversations: MessageConversation[]) => this.handleConversations(conversations));
-    ipcRenderer.on('conversation-bodies', (_event: Electron.IpcMessageEvent, conversation: MessageConversation) => this.handleConversationBodies(conversation));
+    this.state = { conversations: [], activeConv: -1 };
+    ipcRenderer.on('conversation-listings', (_event: Electron.IpcMessageEvent, conversations: ConversationListing[]) => this.handleConversationListings(conversations));
+    // ipcRenderer.on('conversation-bodies', (_event: Electron.IpcMessageEvent, conversation: MessageConversation) => this.handleConversationBodies(conversation));
 
     this.convClicked = this.convClicked.bind(this);
   }
 
-  handleConversations(conversations: MessageConversation[]) {
-    this.setState({ conversations: conversations });
+  handleConversationListings(conversations: ConversationListing[]) {
+    this.setState({ activeConv: -1, conversations: conversations });
   }
 
-  handleConversationBodies(conversation: MessageConversation) {
-    this.setState({ activeConversation: conversation });
-  }
+  // handleConversationBodies(conversation: ConversationListing) {
+  //   this.setState({ activeConversation: conversation });
+  // }
 
-  convClicked(conv: MessageConversation): void {
+  convClicked(conv: ConversationListing): void {
     ipcRenderer.send('conversation-open', conv);
-    this.setState({ activeConversation: conv });
+    this.setState({ activeConv: this.state.conversations.indexOf(conv) || 0 });
   }
 
   render() {
     return (
       <div className="AccountFrame">
         <AccountConversationBar
-          accountName={this.props.account.name}
-          accountEmail={this.props.account.address}
+          account={this.props.account}
           conversations={this.state.conversations}
-          activeConversation={this.state.activeConversation}
+          activeConv={this.state.activeConv}
           convClicked={this.convClicked}
         />
-        <ConversationPane conversation={this.state.activeConversation}/>
+        <ConversationPane conversation={
+          this.state.activeConv != 0 ? this.state.conversations[this.state.activeConv] : null}/>
         <LoadingSpinner 
-          visible={this.state.activeConversation != null && this.state.activeConversation.headers.length > 0 && this.state.activeConversation.contents.length == 0} 
           style={{position: 'absolute', top: '16px', right: '16px', width: '24px', height: '24px'}}
+          visible={this.state.activeConv != -1 && 
+                   this.state.conversations[this.state.activeConv].messageIds.length > 0} 
         />
       </div>
     );

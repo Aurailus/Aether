@@ -1,8 +1,7 @@
-// const Imap = require('imap');
-const fs = require('fs').promises;
+import * as Electron from 'electron';
+const fs = require('fs').promises; 
 
 import { ImapAccount } from './ImapAccount';
-import { SerializedAccount } from '../../data/SerializedAccount';
 import { AccountManager } from './AccountManager';
 
 export class App {
@@ -21,15 +20,13 @@ export class App {
 	}
 
 	private async loadAccounts() {
-		let data: string = await fs.readFile('data/cred.json');
-		const serializedAccounts: SerializedAccount[] = JSON.parse(data).accounts;
-
-		for (const serialized of serializedAccounts) {
+		let data: string = await fs.readFile('data/cred.json')
+		for (const serialized of JSON.parse(data).accounts) {
 			const acct = new ImapAccount(serialized);
-			acct.setup().then(() => acct.connect()).then(async () => this.manager.loadAccount(acct))
-			.catch((failedAcct: string) => {
-				console.log('Failed to connect to account ', failedAcct);
-			});
+			this.manager.addAccount(acct);
 		}
+
+		try { await this.manager.loadAccounts(); }
+		catch (failedAcct) { console.log('Failed to connect to account ', failedAcct); }
 	}
 }

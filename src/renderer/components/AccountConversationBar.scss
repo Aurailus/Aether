@@ -73,3 +73,23 @@
     height: 100%;
   }
 }
+
+.AccountConversationBar-updatingCacheHeader,
+.AccountConversationBar-updatingCacheSubtext {
+  position: absolute;
+  text-align: center;
+  user-select: none;
+  width: 100%;
+  color: #fff;
+}
+
+.AccountConversationBar-updatingCacheHeader {
+  top: calc(50% - 16px);  
+  opacity: 0.6;
+}
+
+.AccountConversationBar-updatingCacheSubtext {
+  top: calc(50% + 12px);
+  font-size: 16px;
+  opacity: 0.4;  
+}

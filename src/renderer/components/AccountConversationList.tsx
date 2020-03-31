@@ -4,7 +4,7 @@ import ReactCSSTransitionGroup from 'react-addons-css-transition-group';
 
 import './AccountConversationList.scss';
 
-import { MessageConversation } from '../../data/MessageConversation';
+import { ConversationListing } from '../../data/ConversationListing';
 
 import * as FormatDate from '../../util/FormatDate';
 
@@ -17,9 +17,9 @@ const archiveIcon = require('../../../res/icon-box.svg');
 interface Props {
     accountName: string;
     accountEmail: string;
-    conversations: MessageConversation[];
-    activeConversation: MessageConversation | null;
-    convClicked: (message: MessageConversation) => void;
+    conversations: ConversationListing[];
+    activeConv: number;
+    convClicked: (message: ConversationListing) => void;
 }
 
 export class AccountConversationList extends React.Component<Props, {}> {
@@ -89,21 +89,20 @@ export class AccountConversationList extends React.Component<Props, {}> {
           transitionLeaveTimeout={200}
         >
           {this.props.conversations.map((conv, ind) => {
-            let date = new Date(conv.headers[0].date);
+            let date = new Date(conv.lastMessageDate);
             date!.setHours(0, 0, 0, 0);
 
             let header = this.getHeader(date, lastDate);
             lastDate = date;
 
             let returns: any[] = [];
-            if (header) returns.push(<ConversationDateHeader key={new Date(conv.headers[0].date).getTime()} header={header} />);
+            if (header) returns.push(<ConversationDateHeader key={new Date(conv.lastMessageDate).getTime()} header={header} />);
             returns.push((
               <AccountConversationItem
                 key={ind}
                 conversation={conv}
                 hasUnread={true}
-                active={this.props.activeConversation != null && this.props.activeConversation.headers.length > 0 
-                  && this.props.activeConversation.headers[0].uid == conv.headers[0].uid}
+                active={this.props.activeConv != -1 && this.props.conversations[this.props.activeConv].id == conv.id}
                 onClick={this.convClicked.bind(this, ind)}
               />  
             ));

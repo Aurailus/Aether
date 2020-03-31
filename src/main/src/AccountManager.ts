@@ -1,15 +1,10 @@
 import { WebContents, ipcMain as recv } from 'electron';
-// import { simpleParser } from 'mailparser'
-
 import { ImapAccount } from './ImapAccount';
-// import { MessageHeader } from '../../data/MessageHeader';
-// import { MessageConversation } from '../../data/MessageConversation';
 
 export class AccountManager {
 	private send: WebContents;
-
 	private accounts: {[key: string]: ImapAccount} = {};
-	private currentAccount: ImapAccount | null = null;
+	currentAccountKey: string = "";
 
 	constructor(send: WebContents) {
 		this.send = send;
@@ -19,36 +14,47 @@ export class AccountManager {
 		// 	=> this.handleConversationOpen(conversationHeaders));
 	}
 
-	async loadAccount(account: ImapAccount) {
-		this.accounts[account.props.address] = account;
+	addAccount(account: ImapAccount) {
 		this.send.send('account-add', account.props);
+		this.accounts[account.props.address] = account;
 
 		// Temporary to allow faster debugging
 		recv.on('reload', () => this.send.send('account-add', account.props));
 	}
 
+	async loadAccounts() {
+		await Promise.all(Object.keys(this.accounts).map(async (name: string) => {
+			const account = this.accounts[name];
+
+			await account.setup();
+			await account.connect();
+
+			this.send.send('account-load', account.props);
+			if (this.currentAccountKey == name)
+				this.send.send('conversation-listings', await account.getConversationListings());
+		}));
+	}
+
 	handleAccountOpen(id: string) {
 		for (const address in this.accounts) {
-			let acct = this.accounts[address];
-			if (acct.props.id === id) { 
-				this.currentAccount = acct; 
+			if (this.accounts[address].props.id === id) { 
+				this.currentAccountKey = address;
 				break;
 			}
 		}
-		if (!this.currentAccount) return;
+		if (!this.currentAccountKey) return;
 		this.sendConversationHeaders();
 	}
 
 	async sendConversationHeaders() {
-		this.send.send('conversations', []);
+		if (!this.currentAccountKey || !this.accounts[this.currentAccountKey] || 
+			!this.accounts[this.currentAccountKey].props.loaded) return;
 
-		// try {
-		// 	const conversations = await this.collectConversationHeaders();
-		// 	if (conversations) this.send.send('conversations', conversations);
-		// }
-		// catch(e) {
-		// 	console.log('Error getting messages: ', e);
-		// }
+		this.send.send('conversation-listings', []);
+
+		const listings = await this.accounts[this.currentAccountKey].getConversationListings();
+
+		setTimeout(() => this.send.send('conversation-listings', listings), 300);
 	}
 
 	// async collectConversationHeaders() : Promise<MessageConversation[]> {

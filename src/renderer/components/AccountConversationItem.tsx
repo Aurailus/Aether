@@ -1,12 +1,13 @@
 import * as React from 'react';
 
 import './AccountConversationItem.scss';
-import { MessageConversation } from '../../data/MessageConversation';
+
+import { ConversationListing } from '../../data/ConversationListing';
 
 const convIcon = require('../../../res/all-mail.svg');
 
 export interface AccountConversationItemProps {
-    conversation: MessageConversation;
+    conversation: ConversationListing;
     hasUnread: boolean;
     active: boolean;
     onClick: () => void;
@@ -21,10 +22,10 @@ export class AccountConversationItem extends React.Component<AccountConversation
     return (
       <div className={"AccountConversationItem " + (this.props.active ? "active" : "")} onClick={this.props.onClick}>
         <img src={convIcon} />
-        <span className="AccountConversationItem-unreadIndicator">{this.props.conversation.headers.length}</span>
+        {/*<span className="AccountConversationItem-unreadIndicator">{this.props.conversation.messageIds.length}</span>*/}
         <div className="AccountConversationItem-content">  
-          <h3>{this.props.conversation.headers[0].from}</h3>
-          <h4>{/*<img src={subjectIcon} />*/}{this.props.conversation.headers[0].subject}</h4>
+          <h3>{this.props.conversation.participants}</h3>
+          <h4>{/*<img src={subjectIcon} />*/}{this.props.conversation.topic}</h4>
         </div>
       </div>
     );

@@ -34,3 +34,12 @@ export interface SQLConversation {
 
 	participants: string;
 }
+
+export interface SQLContact {
+	id?: number;
+
+	name: string;
+	address: string;
+
+	date: number;
+}

@@ -4,7 +4,7 @@ const parseHeader = require('imap').parseHeader;
 
 import { ImapConn } from '../declarations/ImapConn';
 import { ImapBox, ImapBoxProps } from '../declarations/ImapBox';
-import { SQLMessage, SQLBox, SQLConversation } from '../declarations/SQLStructs';
+import { SQLMessage, SQLBox, SQLConversation, SQLContact } from '../declarations/SQLStructs';
 
 import { ConversationListing } from '../../data/ConversationListing';
 
@@ -38,26 +38,31 @@ export class LocalStore {
 	// Full bodies will be sent upon interaction.
 	//
 	async getConversationListings(): Promise<ConversationListing[]> {
-		let conversations = 
-			(await this.db('conversations').select('*')).map((cv: SQLConversation): ConversationListing => {
-			return {
+		const rawConversations: SQLConversation[] = await this.db('conversations').select('*');
+		let conversations: ConversationListing[] = [];
+
+		for (let cv of rawConversations) {
+
+			let conv = {
 				id: cv.id!,
 				topic: cv.topic,
 
-				participants: JSON.parse(cv.participants),
+				participants: [],
 
 				lastMessageDate: cv.date,
 				messageIds: []
-			};
-		});
+			} as ConversationListing;
 
-		conversations.sort((a, b) => a.lastMessageDate > b.lastMessageDate ? -1 : 1);
+			conv.participants = (await this.db('contacts').select('name')
+				.whereIn('id', JSON.parse(cv.participants))).map((row) => row.name);
 
-		for (let conv of conversations) {
 			conv.messageIds = 
 				(await this.db('messages').select('id').where('conv_id', '=', conv.id)).map((row) => row.id);
-		}
 
+			conversations.push(conv);
+		};
+
+		conversations.sort((a, b) => a.lastMessageDate > b.lastMessageDate ? -1 : 1);
 		return conversations;
 	}
 
@@ -114,6 +119,15 @@ export class LocalStore {
 			table.date('date');
 
 			table.json('participants');
+		});
+
+		await this.db.schema.createTable('contacts', table => {
+			table.increments();
+
+			table.string('name');
+			table.string('address');
+
+			table.date('date');
 		});
 	}
 
@@ -192,6 +206,78 @@ export class LocalStore {
 	}
 
 	//
+	// Get the ID of a contact from their address, and update
+	// their name if the passed-in name is newer than the one on-file.
+	//
+	private async updateContact(address: string, name: string, date: number): Promise<number> {
+		let data: {id: number, date: number} = 
+			(await this.db('contacts').select(['id', 'date']).where('address', '=', address))[0];
+
+		if (data == undefined) {
+			return (await this.db('contacts').insert({
+				name: name,
+				address: address,
+				date: date
+			} as SQLContact))[0];
+		}
+		else if (date > data.date) {
+			await this.db('contacts').where('id', '=', data.id).update({name: name, date: date});
+		}
+		
+		return data.id;
+	}
+
+	//
+	// Parse through a to or from header, add the contacts to the contacts db,
+	// and return an ordered array of contact ids.
+	//
+	private async getAndUpdateContactFromHeader(header: string[], date: number): Promise<number[]> {
+		function getNamesAndAddrs(header: string[]): {names: string[], addrs: string[]} {
+			const nameRegex = /^["']*([\w-@.0-9/ ]+)["']*/;
+			const addrRegex = /[<"]?([\w\-0-9]+@[\w\-0-9]+(?:\.[\w0-9]+)+)[>"]?/;
+
+			const data: {names: string[], addrs: string[]} = {names: [], addrs: []};
+
+			let entries: string[] = [];
+
+			if (!header || !header.length) throw "Header is empty!";
+
+			header.join('\t').split(/\t*>,*/g).map(v => v.trim() != "" ? entries.push(v.trim()) : null);
+
+			for (let entry of entries) {
+				let name: any = entry.match(nameRegex) || entry.match(addrRegex) || null;
+				let addr: any = entry.match(addrRegex) || null;
+
+				if (addr == null) throw "Failed to parse header: `" + entry + "`";
+
+				if (name != null && name[1] != null) data.names.push(name[1] as string); 
+				if (addr != null && addr[1] != null) data.addrs.push(addr[1] as string); 
+			}
+
+			return data;
+		}
+
+		let ids = [];
+
+		try {
+			let namesAndAddrs = getNamesAndAddrs(header);
+			
+			for (let ind in namesAndAddrs.names) {
+				let name = namesAndAddrs.names[ind];
+				let addr = namesAndAddrs.addrs[ind];
+
+				ids.push(await this.updateContact(addr, name, date));
+			}
+		}
+		catch (e) { /*Just leave the list empty if it can't parse anything*/ }
+
+		//@ts-ignore - remove duplicates.
+		ids = [...new Set(ids)];
+		ids.sort();
+		return ids;
+	}
+
+	//
 	// Get all of the email headers from a specified box on the Imap server,
 	// and store the information in the `messages` table in the knex db.
 	//
@@ -205,32 +291,12 @@ export class LocalStore {
 				await this.db('boxes').where('id', '=', id)
 					.update({uidvalidity: boxProps.uidvalidity});
 
-				function namesAndAddrs(header: string[]): {names: string[], addrs: string[]} {
-					const nameRegex = /^["']*([\w-@.0-9/ ]+)["']*/;
-					const addrRegex = /<?([\w\-0-9]+@[\w\-0-9]+(?:\.[\w0-9]+)+)>?$/;
-
-					const data: {names: string[], addrs: string[]} = {names: [], addrs: []};
-
-					((header && header.length > 0) ? (header.join('\t').split('\t')) : []).forEach((v: string) => {
-						let name: any = v.trim().match(nameRegex) || v.trim().match(addrRegex) || null;
-						let addr: any = v.trim().match(addrRegex) || null;
-
-						// if (addr == null) {
-						// 	console.log("couldn't parse", header);
-						// }
-						
-						if (name != null && name[1] != null) data.names.push(name[1] as string); 
-						if (addr != null && addr[1] != null) data.addrs.push(addr[1] as string); 
-					});
-
-					return data;
-				}
-
 				this.conn.seq.search(['ALL'], (err: string, addSeqNos: number[]) => {
 					if (err) reject(err);
 
 					if (addSeqNos && addSeqNos.length > 0) {
 						let content: SQLMessage[] = [];
+						let promises: Promise<void>[] = [];
 
 						let f = this.conn.seq.fetch(addSeqNos, {
 							bodies: "HEADER.FIELDS (FROM TO SUBJECT DATE)"
@@ -249,34 +315,39 @@ export class LocalStore {
 				      msg.on('attributes', (a: any) => uid = a.uid);
 
 							msg.once('end', () => {
-								let date = Date.parse(header.date.join(''));
+								promises.push((async () => {
+									let date = Date.parse(header.date.join(''));
 
-								const recipientData = namesAndAddrs(header.to);
-								const senderData = namesAndAddrs(header.from);
+									const recipientData = await this.getAndUpdateContactFromHeader(header.to, date);
+									const senderData = await this.getAndUpdateContactFromHeader(header.from, date);
 
-								content.push({
-									box_id: id,
-									conv_id: 0,
+									content.push({
+										box_id: id,
+										conv_id: 0,
 
-									subject: (header.subject || []).join(''),
-									
-									senders: JSON.stringify(senderData.addrs),
-									recipients: JSON.stringify(recipientData.addrs),
+										subject: (header.subject || []).join(''),
+										
+										senders: JSON.stringify(senderData),
+										recipients: JSON.stringify(recipientData),
 
-									date: date,
-									seqno: seqno,
-									uid: uid
-								});
+										date: date,
+										seqno: seqno,
+										uid: uid
+									});
+								})());
 							});
 						});
 
 						f.once('error', (err: any) => reject(err));
 				    f.once('end', async () => {
+				    	await Promise.all(promises);
+
 				    	// Break the upload into chunks to avoid overloading the DB.
 				    	const CHUNK_SIZE = 50;
 							for (let i = 0; i < Math.ceil(content.length / CHUNK_SIZE); i++) {
 								await this.db('messages').insert(content.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE));
 							}
+
 							resolve();
 				    });
 					}
@@ -312,8 +383,15 @@ export class LocalStore {
 
 			chain.sort((a, b) => a.date < b.date ? -1 : 1);
 
+			let topic = chain[chain.length - 1].subject;
+			if (/<?No subject>?/gi.test(topic) || topic == "") topic = "No Topic";
+
+			topic = topic
+				.replace(/^((re|fwd|fw)[: ]+)+/gi, "")					 // Remove junk at the start of the topic.
+				.replace(/^\w/, (c: string) => c.toUpperCase()); // Title case the string.
+
 			const conv_id = (await this.db('conversations').insert({
-				topic: chain[chain.length - 1].subject,
+				topic: topic,
 				date: chain[chain.length - 1].date,
 				participants: participants
 			} as SQLConversation))[0];

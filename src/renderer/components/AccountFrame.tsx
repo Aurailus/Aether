@@ -52,7 +52,7 @@ export class AccountFrame extends React.Component<Props, State> {
           convClicked={this.convClicked}
         />
         <ConversationPane conversation={
-          this.state.activeConv != 0 ? this.state.conversations[this.state.activeConv] : null}/>
+          this.state.activeConv != -1 ? this.state.conversations[this.state.activeConv] : null}/>
         <LoadingSpinner 
           style={{position: 'absolute', top: '16px', right: '16px', width: '24px', height: '24px'}}
           visible={this.state.activeConv != -1 && 

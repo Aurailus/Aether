@@ -2,7 +2,7 @@ import * as React from 'react';
 
 import './AccountConversationItem.scss';
 
-import { ConversationListing } from '../../data/ConversationListing';
+import { ConversationListing } from '../../data/Conversation';
 
 const convIcon = require('../../../res/all-mail.svg');
 

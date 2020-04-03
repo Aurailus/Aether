@@ -2,7 +2,7 @@ import * as React from 'react';
 import './AccountConversationBar.scss';
 
 import { AccountProps } from '../../data/AccountProps';
-import { ConversationListing } from '../../data/ConversationListing';
+import { ConversationListing } from '../../data/Conversation';
 
 import { AccountConversationList } from './AccountConversationList';
 import { LoadingSpinner } from './LoadingSpinner';
@@ -61,7 +61,7 @@ export class AccountConversationBar extends React.Component<Props, State> {
           <p className="AccountConversationBar-updatingCacheSubtext">Please wait just a moment.</p>
 
           <LoadingSpinner 
-            visible={this.props.conversations.length <= 0} 
+            visible={true} 
             style={{position: 'absolute', top: 'calc(50% - 32px)', left: '50%', transform: 'translate(-50%, -50%)', width: '24px', height: '24px'}}
           />
         </>)}

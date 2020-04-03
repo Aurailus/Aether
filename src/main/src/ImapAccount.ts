@@ -1,23 +1,18 @@
-import { ImapConn } from '../declarations/ImapConn';
-// import { ImapBox } from '../declarations/ImapBox';
+import { ImapPool } from './ImapPool';
 
 import { AccountProps } from '../../data/AccountProps';
 import { SerializedAccount } from '../../data/SerializedAccount';
-import { ConversationListing } from '../../data/ConversationListing';
+import { ConversationListing, ConversationDetails } from '../../data/Conversation';
 
 import { LocalStore } from './LocalStore';
-
-const Imap = require('imap');
 
 export class ImapAccount {
 	readonly props: AccountProps;
 
 	private localStore: LocalStore;
-	private conn: ImapConn;
+	private conn: ImapPool;
 
 	constructor(props: SerializedAccount) {
-		this.conn = new Imap(props);
-
 		this.props = {
 			id: props.id,
 			address: props.user,
@@ -29,37 +24,26 @@ export class ImapAccount {
 			hasUnread: false
 		}
 		
+		this.conn = new ImapPool(props);
 		this.localStore = new LocalStore(this, this.conn);
 	}
 
-	//
-	// Set up the account, which triggers the localStore to update the cache.
-	//
 	async setup() {
 		await this.localStore.setup();
 	}
 
-	//
-	// Initialize the InternalImapConn connection, and then update the LocalStore cache. 
-	// Returns self on success, and the email address on failure.
-	//
-	connect(): Promise<ImapAccount> {
-		return new Promise((resolve: (conn: ImapAccount) => void, reject: (failedAccount: string) => void) => {
-			this.conn.once('ready', async () =>
-				this.localStore.updateCache().then(() => {
-					this.props.loaded = true;
-					resolve(this)
-				}));
-				// .catch(reject.bind(this, this.props.address)))
-
-			this.conn.once('error', reject.bind(this, this.props.address));
-
-			this.conn.connect();
-		});
+	async connect() {
+		await this.conn.connect();
+		await this.localStore.updateCache();
+		this.props.loaded = true;
 	}
 
 	async getConversationListings(): Promise<ConversationListing[]> {
 		return await this.localStore.getConversationListings();
+	}
+
+	async getConversationDetails(convID: number): Promise<ConversationDetails> {
+		return this.localStore.getConversationDetails(convID);
 	}
 
 	// getMessageContents(message: number | string | number[], callback: (body: any, attrs: any) => void) {

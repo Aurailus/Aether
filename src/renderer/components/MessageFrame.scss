@@ -1,10 +1,10 @@
-.ConversationFrame {
+.MessageFrame {
 	display: grid;
   grid-template-columns: 64px minmax(0, 1fr);
 	width: 100%;
   overflow: hidden;
 
-	.ConversationFrame-icon {
+	.MessageFrame-icon {
     display: inline-block;
     height: 48px;
     width: 48px;
@@ -14,18 +14,18 @@
     user-select: none;
 	}
 
-	.ConversationFrame-details {
+	.MessageFrame-details {
 		margin: 0;
 		margin-bottom: 6px; 
     user-select: none;
 
-		.ConversationFrame-sender {
+		.MessageFrame-sender {
 			font-weight: 600;
 			font-size: 16px;
 			color: #fff;
 		}
 
-		.ConversationFrame-sent {
+		.MessageFrame-sent {
 			font-size: 12px;
 			text-align: baseline;
 			padding-left: 4px;
@@ -33,7 +33,7 @@
 		}
 	}
 
-	.ConversationFrame-iframe {
+	.MessageFrame-iframe {
 		width: 100%;
 		min-width: 0;
 		display: block;

@@ -1,7 +1,5 @@
 export interface SQLMessage {
 	id?: number;
-	box_id: number;
-	conv_id: number;
 
 	subject: string;
 	
@@ -10,7 +8,10 @@ export interface SQLMessage {
 
 	date: number;
 	seqno: number;
+	
 	uid: number;
+	box_id: number;
+	conv_id: number;
 }
 
 export interface SQLBox {
@@ -33,6 +34,12 @@ export interface SQLConversation {
 	date: number;
 
 	participants: string;
+}
+
+export interface SQLBody {
+	id?: number;
+	body: string;
+	lastAccessed: number;	
 }
 
 export interface SQLContact {

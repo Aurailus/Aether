@@ -22,11 +22,11 @@ export class AccountIcon extends React.Component<Props, {}> {
 					${(this.props.account.loaded && this.props.hasUnread) ? 'hasUnread' : ''}`}
 
         style={{
-          backgroundImage: this.props.account.loaded ? `url("${this.props.account.image}")` : '',
-          backgroundColor: this.props.account.loaded ? '' : 'rgba(255,255,255,0.05)'}}
+          backgroundImage: (this.props.account.loaded || this.props.account.id == "*") ? 
+            `url("${this.props.account.image}")` : ''}}
         onClick={this.props.onClick}>
 
-        {this.props.account.loaded || <LoadingSpinner 
+        {(!this.props.account.loaded && this.props.account.id != "*") && <LoadingSpinner 
           visible={true}
           style={{position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '24px', height: '24px'}}
         />}

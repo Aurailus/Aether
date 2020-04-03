@@ -2,11 +2,12 @@ import * as React from 'react';
 
 import './ConversationFeed.scss';
 
-import { MessageConversation } from '../../data/MessageConversation';
-import { ConversationFrame } from './ConversationFrame';
+import { MessageFrame } from './MessageFrame';
+
+import { ConversationDetails } from '../../data/Conversation';
 
 interface Props {
-  conversation: MessageConversation
+  conv: ConversationDetails
 }
 
 export class ConversationFeed extends React.Component<Props, {}> {
@@ -16,11 +17,11 @@ export class ConversationFeed extends React.Component<Props, {}> {
     return (
     <main className="ConversationFeed">
       <ul>
-        {this.props.conversation.headers.slice(0).reverse().map((head, ind): any | null => {
-          ind = this.props.conversation.headers.length - ind - 1;
-          if (this.props.conversation.contents.length > ind) {
+        {this.props.conv.messages.slice(0).reverse().map((_head, ind): any | null => {
+          ind = this.props.conv.messages.length - ind - 1;
+          if (this.props.conv.messages.length > ind) {
             let returns: any[] = [];
-            returns.push(<ConversationFrame key={ind} header={head} content={this.props.conversation.contents[ind]} />);
+            returns.push(<MessageFrame key={ind} message={this.props.conv.messages[ind]} />);
             if (ind > 0) returns.push(<hr className="ConversationFeed-hr" key={ind + "_hr"} />);
             return returns;
           }

@@ -1,21 +1,24 @@
 import * as fs from 'fs';
 import * as Knex from 'knex';
 const parseHeader = require('imap').parseHeader;
+const simpleParser = require('mailparser').simpleParser;
 
-import { ImapConn } from '../declarations/ImapConn';
-import { ImapBox, ImapBoxProps } from '../declarations/ImapBox';
-import { SQLMessage, SQLBox, SQLConversation, SQLContact } from '../declarations/SQLStructs';
-
-import { ConversationListing } from '../../data/ConversationListing';
+import { ImapPool } from './ImapPool';
+import { ImapBox } from '../declarations/ImapBox';
+import { SQLMessage, SQLBox, SQLConversation, SQLContact, SQLBody } from '../declarations/SQLStructs';
+import { ConversationListing, ConversationDetails } from '../../data/Conversation';
+import { Message, MessageHeader, MessageBody } from '../../data/Message';
 
 import { ImapAccount } from './ImapAccount';
 
 export class LocalStore {
+	private static CACHE_STR_LEN: number = 2147483647;
+
 	private account: ImapAccount;
-	private conn: ImapConn;
+	private conn: ImapPool;
 	private db: Knex;
 
-	constructor(account: ImapAccount, conn: ImapConn) {
+	constructor(account: ImapAccount, conn: ImapPool) {
 		this.conn = conn;
 		this.account = account;
 
@@ -24,46 +27,10 @@ export class LocalStore {
 
 		this.db = Knex({
 			client: 'sqlite3',
-		  searchPath: ['knex', 'public'],
-		  useNullAsDefault: true,
-			connection: {
-				filename: 'data/cache/' + this.account.props.address + '.sqlite'
-			},
+			searchPath: ['knex', 'public'],
+			useNullAsDefault: true,
+			connection: { filename: 'data/cache/' + this.account.props.address + '.sqlite' },
 		});
-	}
-
-	//
-	// Get conversation listings.
-	// This information is only the Conversation ID, subject, participants, and date.
-	// Full bodies will be sent upon interaction.
-	//
-	async getConversationListings(): Promise<ConversationListing[]> {
-		const rawConversations: SQLConversation[] = await this.db('conversations').select('*');
-		let conversations: ConversationListing[] = [];
-
-		for (let cv of rawConversations) {
-
-			let conv = {
-				id: cv.id!,
-				topic: cv.topic,
-
-				participants: [],
-
-				lastMessageDate: cv.date,
-				messageIds: []
-			} as ConversationListing;
-
-			conv.participants = (await this.db('contacts').select('name')
-				.whereIn('id', JSON.parse(cv.participants))).map((row) => row.name);
-
-			conv.messageIds = 
-				(await this.db('messages').select('id').where('conv_id', '=', conv.id)).map((row) => row.id);
-
-			conversations.push(conv);
-		};
-
-		conversations.sort((a, b) => a.lastMessageDate > b.lastMessageDate ? -1 : 1);
-		return conversations;
 	}
 
 	//
@@ -112,6 +79,13 @@ export class LocalStore {
 			table.integer('uid');
 		});
 
+		await this.db.schema.createTable('bodies', table => {
+			table.integer('id').primary();
+
+			table.string('body', LocalStore.CACHE_STR_LEN);
+			table.date('lastAccessed');
+		});
+
 		await this.db.schema.createTable('conversations', table => {
 			table.increments();
 
@@ -150,59 +124,126 @@ export class LocalStore {
 	}
 
 	//
+	// Get conversation listing by Conversation ID,
+	// retrieving and parsing the data from the db.
+	//
+	async getConversationListing(convId: number): Promise<ConversationListing> {
+		const rawConv: SQLConversation = 
+			(await this.db('conversations').select('*').where('id', '=', convId))[0];
+
+		let conv: ConversationListing = {
+			id: rawConv.id!,
+			topic: rawConv.topic,
+
+			participants: "",
+
+			lastMessageDate: rawConv.date,
+			messageIds: []
+		};
+			
+		conv.participants = (await this.db('contacts').select('name')
+			.whereIn('id', JSON.parse(rawConv.participants))).map((row) => row.name).sort().join(", ");
+		conv.messageIds = 
+			(await this.db('messages').select('id').where('conv_id', '=', rawConv.id)).map((row) => row.id);
+
+		return conv;
+	}
+
+	//
+	// Get all conversation listings on the account,
+	// retrieving and parsing the data from the db.
+	//
+	async getConversationListings(): Promise<ConversationListing[]> {
+		let conversations: ConversationListing[] = [];
+		await Promise.all((await this.db('conversations').select('id')).map(async (row) => 
+			conversations.push(await this.getConversationListing(row.id))));
+
+		conversations.sort((a, b) => a.lastMessageDate > b.lastMessageDate ? -1 : 1);
+		return conversations;
+	}
+
+	//
+	// Concatenate message header and body details and 
+	// return a full Message object that corresponds to the message id.
+	//
+	async getMessage(messageId: number): Promise<Message> {
+		const rawHeader: SQLMessage = (await this.db('messages').select('*').where('id', '=', messageId))[0];
+		const header: MessageHeader = {
+			id: messageId, 
+			date: rawHeader.date, 
+			subject: rawHeader.subject, 
+			recipients: "", 
+			senders: ""
+		};
+
+		header.senders = (await this.db('contacts').select('name')
+			.whereIn('id', JSON.parse(rawHeader.senders))).map((row) => row.name).sort().join(", ");
+		header.recipients = (await this.db('contacts').select('name')
+			.whereIn('id', JSON.parse(rawHeader.recipients))).map((row) => row.name).sort().join(", ");
+
+		const rawBody = (await this.db('bodies').select('body').where('id', '=', messageId))[0].body;
+		const body: MessageBody = {id: messageId, body: rawBody};
+
+		return {header: header, body: body};
+	}
+
+	//
+	// Get the full conversation details of a conversation.
+	// This includes all of the headers and bodies for the messages included.
+	//
+	async getConversationDetails(convID: number): Promise<ConversationDetails> {
+		let details = (await this.getConversationListing(convID)) as ConversationDetails;
+		await this.cacheBodies(details.messageIds.slice());
+		details.messages = await Promise.all(details.messageIds.map(async (id) => await this.getMessage(id)));
+		return details;
+	}
+
+	//
 	// Get the layout of boxes on the Imap server,
 	// and store the information in the `boxes` table in the knex db.
 	//
 	private async syncBoxes() {
-		return new Promise((resolve: () => void, reject: (err: string) => void) => {
-			try {
-				this.conn.getBoxes(async (err: string, boxesProps: {[key: string]: ImapBox}) => {
-					if (err) throw(err);
+		async function insertBoxes(db: Knex, name: string, box: ImapBox, path?: string, parentId?: number): Promise<{id: number, path: string}> {
+			path = (path ? path + box.delimiter + name : name);
 
-					async function insertBoxes(knex: Knex, name: string, box: ImapBox, path?: string, parentId?: number): Promise<{id: number, path: string}> {
-						path = (path ? path + box.delimiter + name : name);
+			let useInConversations: boolean = 
+				name == "INBOX" ||
+				box.attribs.includes('\\Sent') || 
+				box.attribs.includes('\\Trash');
 
-						let useInConversations: boolean = 
-							name == "INBOX" ||
-							box.attribs.includes('\\Sent') || 
-							box.attribs.includes('\\Trash');
+			let id: number = (await db('boxes').insert({
+				name: name,
+				path: path,
+				delimiter: box.delimiter,
+				attribs: box.attribs.join(' '),
+				parent: (parentId === undefined ? null : parentId),
+				children: JSON.stringify([]),
+				useInConversations: useInConversations
+			} as SQLBox))[0];
 
-						let id: number = (await knex('boxes').insert({
-							name: name,
-							path: path,
-							delimiter: box.delimiter,
-							attribs: box.attribs.join(' '),
-							parent: (parentId === undefined ? null : parentId),
-							children: JSON.stringify([]),
-							useInConversations: useInConversations
-						} as SQLBox))[0];
+			if (box.children != null) {
+				await Promise.all(Object.keys(box.children).map(async (name: string) => {
+					let child = box.children![name];
+					let dat: {id: number, path: string} = await insertBoxes(db, name, child, path, id);
 
-						if (box.children != null) {
-							for (let child in box.children) { 
-								let dat: {id: number, path: string} = await insertBoxes(knex, child, box.children[child], path, id);
+					await db('boxes').where('id', '=', id).select('children')
+					.then((rows: {children: string}[]) => {
+						let children: number[] = JSON.parse(rows[0].children) || [];
+						children.push(dat.id);
 
-								await knex('boxes').where('id', '=', id).select('children')
-								.then((rows: {children: string}[]) => {
-									let children: number[] = JSON.parse(rows[0].children) || [];
-									children.push(dat.id);
-
-									return knex('boxes').where('id', '=', id).update({children: children});
-								});
-							}
-						}
-
-						return {id: id, path: path};
-					}
-
-					for (let box in boxesProps) await insertBoxes(this.db, box, boxesProps[box]);
-
-					resolve();
-				});
+						return db('boxes').where('id', '=', id).update({children: children});
+					});
+				}));
 			}
-			catch (e) {
-				reject(e);
-			}
-		});
+
+			return {id: id, path: path};
+		}
+
+		const boxes = await this.conn.getBoxList();
+		await Promise.all(Object.keys(boxes).map(async (name: string) => {
+			let box = boxes[name];
+			await insertBoxes(this.db, name, box);
+		}));
 	}
 
 	//
@@ -250,8 +291,8 @@ export class LocalStore {
 
 				if (addr == null) throw "Failed to parse header: `" + entry + "`";
 
-				if (name != null && name[1] != null) data.names.push(name[1] as string); 
-				if (addr != null && addr[1] != null) data.addrs.push(addr[1] as string); 
+				if (name != null && name[1] != null) data.names.push((name[1] as string).trim()); 
+				if (addr != null && addr[1] != null) data.addrs.push((addr[1] as string).trim()); 
 			}
 
 			return data;
@@ -282,82 +323,64 @@ export class LocalStore {
 	// and store the information in the `messages` table in the knex db.
 	//
 	private async syncMessages(boxPath: string) {
-		await new Promise((resolve: () => void, reject: (err: string) => void) => {
-			this.conn.openBox(boxPath, true, async (err: string, boxProps: ImapBoxProps) => {
-				if (err) reject(err);
 
-				const id = (await this.db('boxes').where('path', '=', boxPath).select('id'))[0].id;
+		// await this.db('boxes').where('id', '=', id)
+		// 	.update({uidvalidity: boxProps.uidvalidity});
 
-				await this.db('boxes').where('id', '=', id)
-					.update({uidvalidity: boxProps.uidvalidity});
+		const id = (await this.db('boxes').where('path', '=', boxPath).select('id'))[0].id;
+		const addSeqNos = await this.conn.box(boxPath).seqSearch(['ALL']);
 
-				this.conn.seq.search(['ALL'], (err: string, addSeqNos: number[]) => {
-					if (err) reject(err);
+		// Early return if the box is empty.
+		if (!addSeqNos || addSeqNos.length == 0) return;
+			
+		let content: SQLMessage[] = [];
+		let promises: Promise<void>[] = [];
 
-					if (addSeqNos && addSeqNos.length > 0) {
-						let content: SQLMessage[] = [];
-						let promises: Promise<void>[] = [];
+		await this.conn.box(boxPath).seqFetch(addSeqNos, 
+			{ bodies: "HEADER.FIELDS (TO FROM SUBJECT DATE)"}, (msg: any, seqno: number) => {
+			
+			let header: any;
+			let uid: number = 0;
 
-						let f = this.conn.seq.fetch(addSeqNos, {
-							bodies: "HEADER.FIELDS (FROM TO SUBJECT DATE)"
-						});
+			msg.on('body', function(stream: any) {
+				let buffer = "";
+				stream.on('data', (chunk: any) => buffer += chunk.toString('utf8'));
+				stream.once('end', () => header = parseHeader(buffer));
+			});
 
-						f.on('message', (msg: any, seqno: number) => {
-							let header: any;
-							let uid: number = 0;
+			msg.on('attributes', (a: any) => uid = a.uid);
 
-							msg.on('body', function(stream: any) {
-				        let buffer = "";
-				        stream.on('data', (chunk: any) => buffer += chunk.toString('utf8'));
-				        stream.once('end', () => header = parseHeader(buffer));
-				      });
+			msg.once('end', () => {
+				promises.push((async () => {
+					let date = Date.parse(header.date.join(''));
 
-				      msg.on('attributes', (a: any) => uid = a.uid);
+					const recipientData = await this.getAndUpdateContactFromHeader(header.to, date);
+					const senderData = await this.getAndUpdateContactFromHeader(header.from, date);
 
-							msg.once('end', () => {
-								promises.push((async () => {
-									let date = Date.parse(header.date.join(''));
+					content.push({
+						box_id: id,
+						conv_id: 0,
 
-									const recipientData = await this.getAndUpdateContactFromHeader(header.to, date);
-									const senderData = await this.getAndUpdateContactFromHeader(header.from, date);
+						subject: (header.subject || []).join(''),
+						
+						senders: JSON.stringify(senderData),
+						recipients: JSON.stringify(recipientData),
 
-									content.push({
-										box_id: id,
-										conv_id: 0,
-
-										subject: (header.subject || []).join(''),
-										
-										senders: JSON.stringify(senderData),
-										recipients: JSON.stringify(recipientData),
-
-										date: date,
-										seqno: seqno,
-										uid: uid
-									});
-								})());
-							});
-						});
-
-						f.once('error', (err: any) => reject(err));
-				    f.once('end', async () => {
-				    	await Promise.all(promises);
-
-				    	// Break the upload into chunks to avoid overloading the DB.
-				    	const CHUNK_SIZE = 50;
-							for (let i = 0; i < Math.ceil(content.length / CHUNK_SIZE); i++) {
-								await this.db('messages').insert(content.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE));
-							}
-
-							resolve();
-				    });
-					}
-					else {
-						// The box is empty.
-						resolve();
-					}
-				});
+						date: date,
+						seqno: seqno,
+						uid: uid
+					});
+				})());
 			});
 		});
+
+		await Promise.all(promises);
+
+		// Break the upload into chunks to avoid overloading the DB.
+		const CHUNK_SIZE = 50;
+		for (let i = 0; i < Math.ceil(content.length / CHUNK_SIZE); i++) {
+			await this.db('messages').insert(content.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE));
+		}
 	}
 
 	//
@@ -399,5 +422,74 @@ export class LocalStore {
 			const ids = chain.map((elem: SQLMessage) => elem.id);
 			await this.db('messages').whereIn('id', ids).update("conv_id", conv_id);
 		}));
+	}
+
+	//
+	// Get the bodies of the list of messages below from the DB,
+	// and either add them to the cache, or, if they already exist in there, 
+	// update their lastAccessed value.
+	//
+	private async cacheBodies(dbIds: number[]) {
+		const duplicateIDs = (await this.db('bodies').select('id').whereIn('id', dbIds)).map((row) => row.id);
+		for (let id of duplicateIDs) dbIds.splice(dbIds.indexOf(id), 1);
+
+		let messages: {id: number, uid: number, box_id: number}[] = 
+			await this.db('messages').whereIn('id', dbIds).select(['id', 'uid', 'box_id']);
+			
+		let parsePromises: Promise<{data: any, uid: number}>[] = [];
+
+		let retrieveBodies = async (messages: {id: number, uid: number, box_id: number}[]) => {
+			if (messages.length == 0) return;
+			const boxPath: string = (await this.db('boxes').where('id', '=', messages[0].box_id).select('path'))[0].path;
+			
+
+			await this.conn.box(boxPath).uidFetch(messages.map((r) => r.uid), { bodies: "", struct: true }, (msg: any, _seqno: number) => {
+				let body: string = "";
+				let uid: number = -1;
+				
+				msg.on('body', function(stream: any) {
+					let buffer = "";
+					stream.on('data', (chunk: any) => buffer += chunk.toString('utf8'));
+					stream.once('end', () => body = buffer);
+				});
+
+				msg.on('attributes', (a: any) => uid = a.uid);
+				
+				msg.once('end', () => {
+					parsePromises.push(new Promise(async (resolve: (ret: {data: any, uid: number}) => void) => {
+						resolve({data: await simpleParser(body, {}), uid: uid});
+					}));
+				});
+			});
+		}
+
+		messages.sort((a, b) => a.box_id < b.box_id ? 1 : -1);
+
+		let startInd = 0;
+		for (let i = 0; i < messages.length; i++) {
+			if (messages[i].box_id != messages[startInd].box_id) {
+				await retrieveBodies(messages.slice(startInd, i));
+				startInd = i;
+			}
+		}
+		await retrieveBodies(messages.slice(startInd));
+
+		for (let ans of await Promise.all(parsePromises)) {
+			let id = -1;
+			for (let message of messages) {
+				if (message.uid == ans.uid) {
+					id = message.id;
+					break;
+				}
+			}
+			if (id == -1) throw "Failed to find message in messages queue.";
+			if ((await this.db('bodies').select('id').where('id', '=', id)).length == 0) {
+				await this.db('bodies').insert({
+					id: id,
+					body: ans.data.text || "no plaintext",
+					lastAccessed: Date.now()
+				} as SQLBody);
+			}
+		}
 	}
 }

@@ -4,7 +4,7 @@ import ReactCSSTransitionGroup from 'react-addons-css-transition-group';
 
 import './AccountConversationList.scss';
 
-import { ConversationListing } from '../../data/ConversationListing';
+import { ConversationListing } from '../../data/Conversation';
 
 import * as FormatDate from '../../util/FormatDate';
 

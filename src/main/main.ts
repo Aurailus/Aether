@@ -6,6 +6,8 @@ import { App } from './src/App';
 
 let win: BrowserWindow | null;
 
+process.on('unhandledRejection', up => { throw up });
+
 const installExtensions = async () => {
     const installer = require('electron-devtools-installer');
     const forceDownload = !!process.env.UPGRADE_EXTENSIONS;

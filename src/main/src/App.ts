@@ -16,6 +16,10 @@ export class App {
 	}
 
 	async initialize() {
+		console.log('\n---------------------');
+		console.log('     Aether Mail\n     Node Server');
+		console.log('---------------------\n');
+		
 		await this.loadAccounts();
 	}
 

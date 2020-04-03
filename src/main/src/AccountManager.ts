@@ -9,9 +9,8 @@ export class AccountManager {
 	constructor(send: WebContents) {
 		this.send = send;
 
-		recv.on('account-open', (_event: Electron.IpcMessageEvent, acctId: string) => this.handleAccountOpen(acctId));
-		// recv.on('conversation-open', (event: Electron.IpcMessageEvent, conversationHeaders: MessageConversation) 
-		// 	=> this.handleConversationOpen(conversationHeaders));
+		recv.on('account-open', 		 (_: Electron.IpcMessageEvent, acctId: string) => this.handleAccountOpen(acctId));
+		recv.on('conversation-open', (_: Electron.IpcMessageEvent, convId: number) => this.handleConversationOpen(convId));
 	}
 
 	addAccount(account: ImapAccount) {
@@ -46,15 +45,21 @@ export class AccountManager {
 		this.sendConversationHeaders();
 	}
 
-	async sendConversationHeaders() {
+	private async sendConversationHeaders() {
 		if (!this.currentAccountKey || !this.accounts[this.currentAccountKey] || 
 			!this.accounts[this.currentAccountKey].props.loaded) return;
 
 		this.send.send('conversation-listings', []);
-
 		const listings = await this.accounts[this.currentAccountKey].getConversationListings();
-
 		setTimeout(() => this.send.send('conversation-listings', listings), 300);
+	}
+
+	async handleConversationOpen(convId: number) {
+		if (!this.currentAccountKey || !this.accounts[this.currentAccountKey] ||
+			!this.accounts[this.currentAccountKey].props.loaded) return;
+
+		this.send.send('conversation-details',
+			await this.accounts[this.currentAccountKey].getConversationDetails(convId));
 	}
 
 	// async collectConversationBodies(conversation: MessageConversation) : Promise<void> {

@@ -1,0 +1,57 @@
+body {
+  margin: 0;
+  padding: 0;
+  color: #bbb;
+}
+
+body, p, p *, div, ol li, ul li {
+  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Oxygen', 'Ubuntu', 'Fira Sans', 'Helvetica Neue', sans-serif !important;
+  font-size: 16px !important;
+  color: #bbb !important;
+
+  margin: 0 0 0.4em 0 !important;
+  line-height: 1.2em !important;
+  
+  word-wrap: break-word !important;
+  word-break: break-word !important;
+  text-align: left !important;
+}
+
+ul, ol {
+  padding-left: 16px !important;
+}
+
+a, a:link {
+  color: #80abeb !important;
+  text-decoration: underline !important;
+
+  a:focus {
+    color: #a1c0f0 !important;
+  }
+
+  a:hover {
+    color: #a7c5f2 !important;
+  }
+
+  a:active {
+    color: #b4c8e6 !important;
+  }
+}
+
+hr {
+  display: none !important;
+}
+
+/* Outlook Style Overrides */
+div[class^="WordSection"] > p.MsoNormal:empty, div[class^="WordSection"] > p.MsoNormal > span, div[class^="WordSection"] > li.MsoListParagraph {
+  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Oxygen', 'Ubuntu', 'Fira Sans', 'Helvetica Neue', sans-serif !important;
+  font-size: 16px !important;
+  color: #bbb !important;
+
+  margin: 0 0 0.4em 0 !important;
+  line-height: 1.2em !important;
+  
+  word-wrap: break-word !important;
+  word-break: break-word !important;
+  text-align: left !important;
+}

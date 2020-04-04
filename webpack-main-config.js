@@ -19,7 +19,7 @@ fs.readdirSync('node_modules').filter(x => {
   externals[mod] = `commonjs ${mod}`
 });
 
-externals['sqlite3'] = 'sqlite3'
+externals['sqlite3'] = 'sqlite3';
 
 module.exports = merge.smart(require('./webpack-base-config'), {
 

@@ -3,12 +3,13 @@ import * as Knex from 'knex';
 const parseHeader = require('imap').parseHeader;
 const simpleParser = require('mailparser').simpleParser;
 
-import { ImapPool } from './ImapPool';
 import { ImapBox } from '../declarations/ImapBox';
 import { SQLMessage, SQLBox, SQLConversation, SQLContact, SQLBody } from '../declarations/SQLStructs';
+
 import { ConversationListing, ConversationDetails } from '../../data/Conversation';
 import { Message, MessageHeader, MessageBody } from '../../data/Message';
 
+import { ImapPool } from './ImapPool';
 import { ImapAccount } from './ImapAccount';
 
 export class LocalStore {
@@ -195,6 +196,7 @@ export class LocalStore {
 		let details = (await this.getConversationListing(convID)) as ConversationDetails;
 		await this.cacheBodies(details.messageIds.slice());
 		details.messages = await Promise.all(details.messageIds.map(async (id) => await this.getMessage(id)));
+		details.messages.sort((a, b) => a.header.date < b.header.date ? 1 : -1);
 		return details;
 	}
 
@@ -486,7 +488,7 @@ export class LocalStore {
 			if ((await this.db('bodies').select('id').where('id', '=', id)).length == 0) {
 				await this.db('bodies').insert({
 					id: id,
-					body: ans.data.text || "no plaintext",
+					body: ans.data.html || ans.data.textAsHtml,
 					lastAccessed: Date.now()
 				} as SQLBody);
 			}

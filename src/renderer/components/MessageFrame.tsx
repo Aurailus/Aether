@@ -3,78 +3,32 @@ import * as React from 'react';
 import './MessageFrame.scss';
 
 import { FormatDate } from '../../util/FormatDate';
-
 import { Message } from '../../data/Message';
+
+const style = require('!css-loader!sass-loader!./MessageFrameStyleInner.scss').toString();
+const convIcon = require('../../../res/all-mail.svg');
+
+//@ts-ignore
+import Turndown from "turndown";
+import Marked from "marked";
 
 interface Props {
   message: Message
 }
 
-const convIcon = require('../../../res/all-mail.svg');
-
-const styles = `
-body {
-  margin: 0;
-  padding: 0;
-  color: #bbb;
-}
-
-body, p, p *, div, ol li, ul li {
-  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Oxygen', 'Ubuntu', 'Fira Sans', 'Helvetica Neue', sans-serif !important;
-  font-size: 16px !important;
-  color: #bbb !important;
-
-  margin: 0 0 0.4em 0 !important;
-  line-height: 1.2em !important;
-  
-  word-wrap: break-word !important;
-  word-break: break-word !important;
-  text-align: left !important;
-}
-
-ul, ol {
-  padding-left: 16px !important;
-}
-
-a, a:link {
-  color: #80abeb !important;
-  text-decoration: underline !important;
-}
-
-a:focus {
-  color: #a1c0f0 !important;
-}
-
-a:hover {
-  color: #a7c5f2 !important;
-}
-
-a:active {
-  color: #b4c8e6 !important;
-}
-
-hr {
-  display: none !important;
-}
-
-/* Outlook Style Overrides */
-div[class^="WordSection"] > p.MsoNormal:empty, div[class^="WordSection"] > p.MsoNormal > span, div[class^="WordSection"] > li.MsoListParagraph {
-  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Oxygen', 'Ubuntu', 'Fira Sans', 'Helvetica Neue', sans-serif !important;
-  font-size: 16px !important;
-  color: #bbb !important;
-
-  margin: 0 0 0.4em 0 !important;
-  line-height: 1.2em !important;
-  
-  word-wrap: break-word !important;
-  word-break: break-word !important;
-  text-align: left !important;
-}
-`;
+// interface NodeData {
+//   par: string,
+//   val: string 
+// }
 
 export class MessageFrame extends React.Component<Props, {}> {
   frame: HTMLIFrameElement | null = null;
   observer: any;
+
+  // static ALLOWED_TAGS = [
+  //   "span", "p", "a", "div", 
+  //   "strong", "b", "em", "i", 
+  //   "h1", "h2", "h3", "h4", "h5", "h6"];
 
   constructor(props: Props) {
     super(props);
@@ -91,7 +45,80 @@ export class MessageFrame extends React.Component<Props, {}> {
 
   componentDidMount() {
     if (this.frame != null) {
-      let message = this.props.message.body.body;
+      const service = new Turndown();
+      let md = service.turndown(this.props.message.body.body);
+
+      console.log(md);
+
+      // Strip history using format 'From: Name [Email]'
+      md = md.replace(/(\*\*)?From:(\*\*)? ?[\w@. ]+ ?\\?\[?.+\]?(.|\n)*$/gm, '');
+      // Strip history using format 'On 0000-00-00 00:00 a.m., Name|Email wrote:'
+      md = md.replace(/On \d{2,4}-\d{2}-\d{2} \d{1,2}:\d{2} ?((a|p).?m.?)?,? ?.+ ?wrote:?(.|\n)*$/gm, '');
+      // Strip history using format 'On Wed, Mar 00, 0000 at 0:00 AM -0700, "Name" <email> wrote:'
+      md = md.replace(/On \w+[, ]*\w+[, ]*\d{1,2}[, ]*\d{2,4}( at |, *)\d{1,2}:\d{1,2}( (A|P)M )?-?\d*[, ]*["']?[\w ]+["']? ?<.+> ?wrote:?(.|\n)*$/gm, '');
+
+      let html = Marked(md);
+
+      // const dom = document.createElement('div');
+      // dom.innerHTML = this.props.message.body.body;
+
+      // console.log(Turndown);
+
+      // let textContent: NodeData[] = [];
+
+      // // Discover elements
+      // let discoverTextContent = (node: Node) => {
+      //   if (node.nodeName == "#text") {
+      //     const par = (node.parentNode?.nodeName || "").toLowerCase().trim();
+
+      //     let val: string = (node.nodeValue || "").trim();
+      //     val = val.trim();
+      //     val = val.replace(/\*/g, '\*');
+      //     val = val.replace(/\_/g, '\_');
+
+      //     textContent.push({par: par, val: val});
+      //   }
+      //   node.childNodes.forEach((child) => discoverTextContent(child));
+      // }
+
+      // const body = dom.querySelector('body') || dom;
+      // discoverTextContent(body);
+
+      // // Prune elements
+      // textContent = textContent.filter((e) => {
+      //   // Remove empty divs.
+
+      //   if (!MessageFrame.ALLOWED_TAGS.includes(e.par)) {
+      //     // console.log(e.par);
+      //     return false;
+      //   }
+
+      //   if (e.par == "div" && e.val.trim() == "") return false;
+      //   return true;
+      // });
+
+      // // Add Markdown semantics
+      // textContent = textContent.map((e): NodeData => {
+      //   let wrap = "";
+        
+      //   if (e.val.trim() != "") {
+      //     if (e.par == "b" || e.par == "strong") wrap = "**"; // Bold
+      //     else if (e.par == "i" || e.par == "em") wrap = "_"; // Italics
+      //   }
+
+      //   return {par: e.par, val: wrap + e.val + wrap};
+      // })
+
+
+
+      // console.log(textContent);
+      // body.childNodes.forEach((n) => console.log(n.nodeName, n));
+
+
+
+
+
+
       // let toNamesSeperated = this.props.message.header.recipients.replace(/ /g, "|").replace(/[\|]+$/, "");
       // let fromNamesSeperated = this.props.message.header.senders.replace(/ /g, "|").replace(/[\|]+$/, "");;
 
@@ -156,7 +183,9 @@ export class MessageFrame extends React.Component<Props, {}> {
       // message = div.innerHTML;
 
       // Append style information
-      message += "<style>" + styles + "</style>";
+
+      let message = html;
+      message += "<style>" + style + "</style>";
 
       this.frame.contentDocument!.body.innerHTML = message;
     }

@@ -12,6 +12,8 @@ import { ConversationListing, ConversationDetails } from '../../data/Conversatio
 
 interface Props {
     account: AccountProps;
+    refreshing: boolean;
+    refreshClicked: (id: string) => void;
 }
 
 interface State {
@@ -51,9 +53,11 @@ export class AccountFrame extends React.Component<Props, State> {
       <div className="AccountFrame">
         <AccountConversationBar
           account={this.props.account}
+          refreshing={this.props.refreshing}
           conversations={this.state.conversations}
           activeConv={this.state.activeConv}
           convClicked={this.convClicked}
+          refreshClicked={this.props.refreshClicked.bind(this, this.props.account.id)}
         />
         <ConversationPane conversation={this.state.convDetails}/>
         <LoadingSpinner 

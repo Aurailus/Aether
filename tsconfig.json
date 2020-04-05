@@ -17,6 +17,8 @@
     "outDir": "./dist",
     "removeComments": true,
 
+    "esModuleInterop": true,
+
     "strict": true,       // Enable strict Type-checking.
     "alwaysStrict": true, // Parse in strict mode and always prepend "use strict".
 

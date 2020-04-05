@@ -1,5 +1,9 @@
 import * as fs from 'fs';
-import * as Knex from 'knex';
+import * as addrs from "email-addresses";
+
+import Crypto from 'crypto';
+import Knex from 'knex';
+
 const parseHeader = require('imap').parseHeader;
 const simpleParser = require('mailparser').simpleParser;
 
@@ -78,6 +82,8 @@ export class LocalStore {
 
 			table.integer('seqno');
 			table.integer('uid');
+			table.string('hash', 64);
+			table.string('reply_to', 64);
 		});
 
 		await this.db.schema.createTable('bodies', table => {
@@ -258,12 +264,12 @@ export class LocalStore {
 
 		if (data == undefined) {
 			return (await this.db('contacts').insert({
-				name: name,
+				name: (name == "" ? address : name),
 				address: address,
 				date: date
 			} as SQLContact))[0];
 		}
-		else if (date > data.date) {
+		else if (date > data.date && name != "") {
 			await this.db('contacts').where('id', '=', data.id).update({name: name, date: date});
 		}
 		
@@ -274,45 +280,12 @@ export class LocalStore {
 	// Parse through a to or from header, add the contacts to the contacts db,
 	// and return an ordered array of contact ids.
 	//
-	private async getAndUpdateContactFromHeader(header: string[], date: number): Promise<number[]> {
-		function getNamesAndAddrs(header: string[]): {names: string[], addrs: string[]} {
-			const nameRegex = /^["']*([\w-@.0-9/ ]+)["']*/;
-			const addrRegex = /[<"]?([\w\-0-9]+@[\w\-0-9]+(?:\.[\w0-9]+)+)[>"]?/;
+	private async parseContactHeader(header: string, date: number): Promise<number[]> {
+		let participants: addrs.ParsedMailbox[] = addrs.parseFrom(header) as addrs.ParsedMailbox[];
 
-			const data: {names: string[], addrs: string[]} = {names: [], addrs: []};
-
-			let entries: string[] = [];
-
-			if (!header || !header.length) throw "Header is empty!";
-
-			header.join('\t').split(/\t*>,*/g).map(v => v.trim() != "" ? entries.push(v.trim()) : null);
-
-			for (let entry of entries) {
-				let name: any = entry.match(nameRegex) || entry.match(addrRegex) || null;
-				let addr: any = entry.match(addrRegex) || null;
-
-				if (addr == null) throw "Failed to parse header: `" + entry + "`";
-
-				if (name != null && name[1] != null) data.names.push((name[1] as string).trim()); 
-				if (addr != null && addr[1] != null) data.addrs.push((addr[1] as string).trim()); 
-			}
-
-			return data;
-		}
-
-		let ids = [];
-
-		try {
-			let namesAndAddrs = getNamesAndAddrs(header);
-			
-			for (let ind in namesAndAddrs.names) {
-				let name = namesAndAddrs.names[ind];
-				let addr = namesAndAddrs.addrs[ind];
-
-				ids.push(await this.updateContact(addr, name, date));
-			}
-		}
-		catch (e) { /*Just leave the list empty if it can't parse anything*/ }
+		let ids: number[] = [];
+		if (participants == null) return ids;
+		for (let p of participants) ids.push(await this.updateContact(p.address || "", p.name || "", date));
 
 		//@ts-ignore - remove duplicates.
 		ids = [...new Set(ids)];
@@ -339,7 +312,7 @@ export class LocalStore {
 		let promises: Promise<void>[] = [];
 
 		await this.conn.box(boxPath).seqFetch(addSeqNos, 
-			{ bodies: "HEADER.FIELDS (TO FROM SUBJECT DATE)"}, (msg: any, seqno: number) => {
+			{ bodies: "HEADER"}, (msg: any, seqno: number) => {
 			
 			let header: any;
 			let uid: number = 0;
@@ -356,22 +329,28 @@ export class LocalStore {
 				promises.push((async () => {
 					let date = Date.parse(header.date.join(''));
 
-					const recipientData = await this.getAndUpdateContactFromHeader(header.to, date);
-					const senderData = await this.getAndUpdateContactFromHeader(header.from, date);
+					const recipientData = await this.parseContactHeader((header.to || []).join(', '), date);
+					const senderData = await this.parseContactHeader((header.from || []).join(', '), date);
 
-					content.push({
+					let message: SQLMessage = {
 						box_id: id,
 						conv_id: 0,
 
 						subject: (header.subject || []).join(''),
+						date: date,
 						
 						senders: JSON.stringify(senderData),
 						recipients: JSON.stringify(recipientData),
 
-						date: date,
 						seqno: seqno,
-						uid: uid
-					});
+						uid: uid,
+						hash: Crypto.createHash('sha256', (header['message-id'] || []).join('')).toString();
+					}
+
+					const replyTo = (header['in-reply-to'] || []).join('');
+					if (replyTo != '') message.reply_to = Crypto.createHash('sha256', replyTo).toString();
+
+					content.push(message);
 				})());
 			});
 		});

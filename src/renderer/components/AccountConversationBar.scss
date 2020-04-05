@@ -51,26 +51,43 @@
   }
 }
 
-.AccountConversationBar-switchViewButton {
+.AccountConversationBar-refreshButton {
   position: absolute;
-  top: 16px;
-  right: 16px;
-  width: 24px;
-  height: 24px;
+  top: 14px;
+  right: 14px;
+  width: 28px;
+  height: 28px;
   opacity: 0.5;
   transition: opacity 0.15s;
+  border-radius: 50%;
+ 
+  transition: transform 0.2s, opacity 0.2s;
 
-  &:hover {
-    opacity: 0.7;
+  &:not(.visible) {
+    opacity: 0;
+    transform: scale(0.5) rotate(181deg);
   }
 
-  &:active {
-    opacity: 1;
+  &.visible {
+    transform: scale(1);
+
+    &:hover {
+      opacity: 0.7;
+      transform: rotate(30deg);
+    }
+
+    &:active {
+      opacity: 1;
+      transform: rotate(180deg);
+    }
   }
 
   & > img {
+    padding: 2px;
     width: 100%;
     height: 100%;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.12);
   }
 }
 

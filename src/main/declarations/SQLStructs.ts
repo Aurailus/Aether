@@ -1,17 +1,19 @@
 export interface SQLMessage {
 	id?: number;
+	box_id: number;
+	conv_id: number;
 
 	subject: string;
+	date: number;
 	
 	recipients: string;
 	senders: string;
 
-	date: number;
 	seqno: number;
-	
 	uid: number;
-	box_id: number;
-	conv_id: number;
+
+	hash: string;
+	reply_to?: string | null;
 }
 
 export interface SQLBox {

@@ -12,7 +12,7 @@ import { ConversationDateHeader } from './ConversationDateHeader';
 import { AccountConversationListButton } from './AccountConversationListButton';
 import { AccountConversationItem } from './AccountConversationItem';
 
-const archiveIcon = require('../../../res/icon-box.svg');
+const archiveIcon = require('../../../res/ico/icon-archived.svg');
 
 interface Props {
     accountName: string;

@@ -13,6 +13,7 @@ export const ALL_ACCOUNT_ID: string = '*';
 
 interface State {
   accounts: { [key: string]: AccountProps };
+  refreshing: boolean;
   activeAccount: string;
 }
 
@@ -22,6 +23,7 @@ export class App extends React.Component<{}, State> {
 
     this.state = {
       accounts: {},
+      refreshing: false,
       activeAccount: ''
     };
 
@@ -29,6 +31,7 @@ export class App extends React.Component<{}, State> {
     ipcRenderer.on('account-add',  (_event: Electron.IpcMessageEvent, arg: AccountProps) => this.addAccountHandler(arg));
     ipcRenderer.on('account-load', (_event: Electron.IpcMessageEvent, arg: AccountProps) => this.loadAccountHandler(arg));
 
+    this.refreshClickHandler = this.refreshClickHandler.bind(this);
     this.accountClickHandler = this.accountClickHandler.bind(this);
   }
 
@@ -98,6 +101,12 @@ export class App extends React.Component<{}, State> {
     }
   }
 
+  refreshClickHandler(_id: string) {
+    this.setState({refreshing: true});
+
+    setTimeout(() => this.setState({refreshing: false}), 1500);
+  }
+
   render() {
     return (
       <div className="App">
@@ -107,7 +116,11 @@ export class App extends React.Component<{}, State> {
           onClick={this.accountClickHandler}
         />
         {this.state.accounts[this.state.activeAccount] != null && (
-          <AccountFrame account={this.state.accounts[this.state.activeAccount]} />
+          <AccountFrame 
+            account={this.state.accounts[this.state.activeAccount]}
+            refreshClicked={this.refreshClickHandler}
+            refreshing={this.state.refreshing} 
+          />
         )}
       </div>
     );

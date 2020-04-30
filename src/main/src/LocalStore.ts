@@ -290,8 +290,7 @@ export class LocalStore {
 		if (participants == null) return ids;
 		for (let p of participants) ids.push(await this.updateContact(p.address || "", p.name || "", date));
 
-		//@ts-ignore - remove duplicates.
-		ids = [...new Set(ids)];
+		ids = Array.from(new Set(ids));
 		ids.sort();
 		return ids;
 	}

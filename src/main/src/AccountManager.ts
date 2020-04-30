@@ -1,5 +1,8 @@
 import { WebContents, ipcMain as recv } from 'electron';
+import { SerializedAccount } from '../../data/SerializedAccount';
 import { ImapAccount } from './ImapAccount';
+
+const fs = require('fs').promises; 
 
 export class AccountManager {
 	private send: WebContents;
@@ -13,7 +16,7 @@ export class AccountManager {
 		recv.on('conversation-open', (_: Electron.IpcMessageEvent, convId: number) => this.handleConversationOpen(convId));
 	}
 
-	addAccount(account: ImapAccount) {
+	private addAccount(account: ImapAccount) {
 		this.send.send('account-add', account.props);
 		this.accounts[account.props.address] = account;
 
@@ -21,7 +24,31 @@ export class AccountManager {
 		recv.on('reload', () => this.send.send('account-add', account.props));
 	}
 
+
+	private async accountsFromFile(credFile: string): Promise<ImapAccount[]> {
+		try {
+			let file = await fs.readFile(credFile);
+			return JSON.parse(file).accounts.map((o: SerializedAccount) => new ImapAccount(o));
+		}
+		catch (e) {
+			console.error("Encountered an error loading accounts from file:\n" + e + "\nRecreating credentials file.");
+			try { await fs.unlink(credFile); } catch (e) {}
+			await fs.writeFile(credFile, `{ "accounts": [] }`);
+			return [];
+		}
+	}
+
 	async loadAccounts() {
+		let accounts = await this.accountsFromFile('data/cred.json');
+		accounts.forEach((a) => this.addAccount(a));
+
+		if (accounts.length == 0) {
+			this.send.send('settings', 'account-create');
+			// Temporary to allow faster debugging
+			recv.on('reload', () => this.send.send('settings', 'account-create'));
+			return;
+		}
+
 		await Promise.all(Object.keys(this.accounts).map(async (name: string) => {
 			const account = this.accounts[name];
 

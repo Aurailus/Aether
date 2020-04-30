@@ -5,16 +5,24 @@ import './App.scss';
 
 import { AccountBar } from './AccountBar';
 import { AccountFrame } from './AccountFrame';
+import { SettingsView } from './SettingsView';
+
 import { AccountProps } from '../../data/AccountProps';
 
 const allMailImg = require('../../../res/all-mail.svg');
-
 export const ALL_ACCOUNT_ID: string = '*';
+
+interface AccountState {
+  activeAccount: string;
+}
+
+interface SettingsState {
+  page: string;
+}
 
 interface State {
   accounts: { [key: string]: AccountProps };
-  refreshing: boolean;
-  activeAccount: string;
+  loc: AccountState | SettingsState;
 }
 
 export class App extends React.Component<{}, State> {
@@ -23,13 +31,15 @@ export class App extends React.Component<{}, State> {
 
     this.state = {
       accounts: {},
-      refreshing: false,
-      activeAccount: ''
+      loc: { activeAccount: '' },
     };
 
     ipcRenderer.send('reload');
-    ipcRenderer.on('account-add',  (_event: Electron.IpcMessageEvent, arg: AccountProps) => this.addAccountHandler(arg));
-    ipcRenderer.on('account-load', (_event: Electron.IpcMessageEvent, arg: AccountProps) => this.loadAccountHandler(arg));
+
+    ipcRenderer.on('account-add',  (_: any, acct: AccountProps) => this.addAccountHandler(acct));
+    ipcRenderer.on('account-load', (_: any, acct: AccountProps) => this.loadAccountHandler(acct));
+
+    ipcRenderer.on('settings', (_: any, page: string) => this.setState({loc: { page: page }}));
 
     this.refreshClickHandler = this.refreshClickHandler.bind(this);
     this.accountClickHandler = this.accountClickHandler.bind(this);
@@ -69,7 +79,7 @@ export class App extends React.Component<{}, State> {
 
     this.setState({ 
       accounts: accounts,
-      activeAccount: (accountsLen >= 2 ? ALL_ACCOUNT_ID : Object.keys(accounts)[0])
+      loc: { activeAccount: (accountsLen >= 2 ? ALL_ACCOUNT_ID : Object.keys(accounts)[0]) }
     });
   }
 
@@ -92,37 +102,51 @@ export class App extends React.Component<{}, State> {
   }
 
   accountClickHandler(id: string, _: React.SyntheticEvent) {
-    if (this.state.activeAccount != id) {
+    if ((this.state.loc as AccountState).activeAccount != id) {
       const accounts = Object.assign({}, this.state.accounts);
       if (accounts[id]) accounts[id].hasUnread = false;
 
-      this.setState({ accounts, activeAccount: id });
+      this.setState({ accounts, loc: { activeAccount: id }});
       ipcRenderer.send('account-open', id);
     }
   }
 
   refreshClickHandler(_id: string) {
-    this.setState({refreshing: true});
+    // this.setState();
 
-    setTimeout(() => this.setState({refreshing: false}), 1500);
+    // setTimeout(() => this.setState({refreshing: false}), 1500);
   }
 
   render() {
-    return (
-      <div className="App">
-        <AccountBar
-          accounts={this.state.accounts}
-          activeAccount={this.state.activeAccount}
-          onClick={this.accountClickHandler}
-        />
-        {this.state.accounts[this.state.activeAccount] != null && (
-          <AccountFrame 
-            account={this.state.accounts[this.state.activeAccount]}
-            refreshClicked={this.refreshClickHandler}
-            refreshing={this.state.refreshing} 
+
+    if ((this.state.loc as AccountState).activeAccount != undefined) {
+      let acct = this.state.loc as AccountState;
+      return (
+        <div className="App">
+          <AccountBar
+            accounts={this.state.accounts}
+            activeAccount={acct.activeAccount}
+            onClick={this.accountClickHandler}
           />
-        )}
-      </div>
-    );
+          {this.state.accounts[acct.activeAccount] != null && (
+            <AccountFrame 
+              account={this.state.accounts[acct.activeAccount]}
+              refreshClicked={this.refreshClickHandler}
+              refreshing={false} 
+            />
+          )}
+        </div>
+      );
+    }
+    else {
+      let settings = this.state.loc as SettingsState;
+      return (
+        <div className="App">
+          <SettingsView
+            page={settings.page}
+          />
+        </div>
+      );
+    }
   }
 }

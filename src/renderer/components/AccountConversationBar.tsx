@@ -2,7 +2,7 @@ import * as React from 'react';
 import './AccountConversationBar.scss';
 
 import { AccountProps } from '../../data/AccountProps';
-import { ConversationListing } from '../../data/Conversation';
+import { ChainListing } from '../../data/Chains';
 
 import { AccountConversationList } from './AccountConversationList';
 import { LoadingSpinner } from './LoadingSpinner';
@@ -13,10 +13,10 @@ interface Props {
   account: AccountProps;
   refreshing: boolean;
   
-  conversations: ConversationListing[];
+  chains: ChainListing[];
   activeConv: number;
   
-  convClicked: (message: ConversationListing) => void;
+  convClicked: (message: ChainListing) => void;
   refreshClicked: () => void;
 }
 
@@ -48,7 +48,7 @@ export class AccountConversationBar extends React.Component<Props, {}> {
         {this.props.account.loaded && (<AccountConversationList
           accountName={this.props.account.name}
           accountEmail={this.props.account.address}
-          conversations={this.props.conversations}
+          chains={this.props.chains}
           activeConv={this.props.activeConv}
           convClicked={this.props.convClicked}
         />)}

@@ -8,9 +8,9 @@ const parseHeader = require('imap').parseHeader;
 const simpleParser = require('mailparser').simpleParser;
 
 import { ImapBox } from '../declarations/ImapBox';
-import { SQLMessage, SQLBox, SQLConversation, SQLContact, SQLBody } from '../declarations/SQLStructs';
+import { SQLMessage, SQLBox, SQLChain, SQLContact, SQLBody } from '../declarations/SQLStructs';
 
-import { ConversationListing, ConversationDetails } from '../../data/Conversation';
+import { ChainListing, ChainDetails } from '../../data/Chains';
 import { Message, MessageHeader, MessageBody } from '../../data/Message';
 
 import { ImapPool } from './ImapPool';
@@ -66,13 +66,13 @@ export class LocalStore {
 			table.integer('parent');
 			table.json('children');
 
-			table.boolean('useInConversations');
+			table.boolean('current').defaultTo('false');
 		});
 
 		await this.db.schema.createTable('messages', table => {
 			table.increments();
-			table.integer('box_id');
-			table.integer('conv_id').notNullable().defaultTo(0);
+			table.integer('box');
+			table.integer('chain').defaultTo(0);
 
 			table.string('subject', 512);
 			table.date('date');
@@ -82,8 +82,9 @@ export class LocalStore {
 
 			table.integer('seqno');
 			table.integer('uid');
-			table.string('hash', 64);
-			table.string('reply_to', 64);
+
+			table.string('hash', 32);
+			table.string('reply_to', 32);
 		});
 
 		await this.db.schema.createTable('bodies', table => {
@@ -93,11 +94,13 @@ export class LocalStore {
 			table.date('lastAccessed');
 		});
 
-		await this.db.schema.createTable('conversations', table => {
+		await this.db.schema.createTable('chains', table => {
 			table.increments();
 
 			table.string('topic', 512);
 			table.date('date');
+
+			table.boolean('archived').defaultTo('false');
 
 			table.json('participants');
 		});
@@ -125,48 +128,48 @@ export class LocalStore {
 
 		let emailCount = (await this.db('messages').select('id')).length;
 
-		await this.buildConversations();
+		await this.updateChains();
 
 		return emailCount;
 	}
 
 	//
-	// Get conversation listing by Conversation ID,
+	// Get chain listing by Chain ID,
 	// retrieving and parsing the data from the db.
 	//
-	async getConversationListing(convId: number): Promise<ConversationListing> {
-		const rawConv: SQLConversation = 
-			(await this.db('conversations').select('*').where('id', '=', convId))[0];
+	async getChainListing(chainId: number): Promise<ChainListing> {
+		const rawChain: SQLChain = 
+			(await this.db('chains').select('*').where('id', '=', chainId))[0];
 
-		let conv: ConversationListing = {
-			id: rawConv.id!,
-			topic: rawConv.topic,
+		let conv: ChainListing = {
+			id: rawChain.id!,
+			topic: rawChain.topic,
 
 			participants: "",
 
-			lastMessageDate: rawConv.date,
+			lastMessageDate: rawChain.date,
 			messageIds: []
 		};
 			
 		conv.participants = (await this.db('contacts').select('name')
-			.whereIn('id', JSON.parse(rawConv.participants))).map((row) => row.name).sort().join(", ");
+			.whereIn('id', JSON.parse(rawChain.participants))).map((row) => row.name).sort().join(", ");
 		conv.messageIds = 
-			(await this.db('messages').select('id').where('conv_id', '=', rawConv.id)).map((row) => row.id);
+			(await this.db('messages').select('id').where('chain', '=', rawChain.id)).map((row) => row.id);
 
 		return conv;
 	}
 
 	//
-	// Get all conversation listings on the account,
+	// Get all chain listings on the account,
 	// retrieving and parsing the data from the db.
 	//
-	async getConversationListings(): Promise<ConversationListing[]> {
-		let conversations: ConversationListing[] = [];
-		await Promise.all((await this.db('conversations').select('id')).map(async (row) => 
-			conversations.push(await this.getConversationListing(row.id))));
+	async getChainListings(): Promise<ChainListing[]> {
+		let chains: ChainListing[] = [];
+		await Promise.all((await this.db('chains').select('id').where('archived', '=', false)).map(async (row) => 
+			chains.push(await this.getChainListing(row.id))));
 
-		conversations.sort((a, b) => a.lastMessageDate > b.lastMessageDate ? -1 : 1);
-		return conversations;
+		chains.sort((a, b) => a.lastMessageDate > b.lastMessageDate ? -1 : 1);
+		return chains;
 	}
 
 	//
@@ -195,11 +198,11 @@ export class LocalStore {
 	}
 
 	//
-	// Get the full conversation details of a conversation.
+	// Get the full chain details of a chain.
 	// This includes all of the headers and bodies for the messages included.
 	//
-	async getConversationDetails(convID: number): Promise<ConversationDetails> {
-		let details = (await this.getConversationListing(convID)) as ConversationDetails;
+	async getChainDetails(chainID: number): Promise<ChainDetails> {
+		let details = (await this.getChainListing(chainID)) as ChainDetails;
 		await this.cacheBodies(details.messageIds.slice());
 		details.messages = await Promise.all(details.messageIds.map(async (id) => await this.getMessage(id)));
 		details.messages.sort((a, b) => a.header.date < b.header.date ? 1 : -1);
@@ -214,7 +217,7 @@ export class LocalStore {
 		async function insertBoxes(db: Knex, name: string, box: ImapBox, path?: string, parentId?: number): Promise<{id: number, path: string}> {
 			path = (path ? path + box.delimiter + name : name);
 
-			let useInConversations: boolean = 
+			let current: boolean = 
 				name == "INBOX" ||
 				box.attribs.includes('\\Sent') || 
 				box.attribs.includes('\\Trash');
@@ -226,7 +229,7 @@ export class LocalStore {
 				attribs: box.attribs.join(' '),
 				parent: (parentId === undefined ? null : parentId),
 				children: JSON.stringify([]),
-				useInConversations: useInConversations
+				current: current
 			} as SQLBox))[0];
 
 			if (box.children != null) {
@@ -332,9 +335,10 @@ export class LocalStore {
 					const recipientData = await this.parseContactHeader((header.to || []).join(', '), date);
 					const senderData = await this.parseContactHeader((header.from || []).join(', '), date);
 
+					const replyTo = (header['in-reply-to'] || []).join('');
+
 					let message: SQLMessage = {
-						box_id: id,
-						conv_id: 0,
+						box: id,
 
 						subject: (header.subject || []).join(''),
 						date: date,
@@ -344,11 +348,9 @@ export class LocalStore {
 
 						seqno: seqno,
 						uid: uid,
-						hash: Crypto.createHash('sha256', (header['message-id'] || []).join('')).toString();
+						hash: Crypto.createHash('md5').update((header['message-id'] || []).join('')).digest('hex'),
+						reply_to: (replyTo == "") ? "" : Crypto.createHash('md5').update(replyTo).digest('hex')
 					}
-
-					const replyTo = (header['in-reply-to'] || []).join('');
-					if (replyTo != '') message.reply_to = Crypto.createHash('sha256', replyTo).toString();
 
 					content.push(message);
 				})());
@@ -358,50 +360,61 @@ export class LocalStore {
 		await Promise.all(promises);
 
 		// Break the upload into chunks to avoid overloading the DB.
-		const CHUNK_SIZE = 50;
+		const CHUNK_SIZE = 75;
 		for (let i = 0; i < Math.ceil(content.length / CHUNK_SIZE); i++) {
 			await this.db('messages').insert(content.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE));
 		}
 	}
 
 	//
-	// Associate emails into conversations.
-	// Scan the inbox, and then check for associated emails in all boxes that have useInConversations enabled.
+	// Associate emails into chains.
+	// Scan the inbox, and then check for associated emails in all boxes that have useInChains enabled.
 	// Store the results into the `messages` table in the db.
 	//
-	private async buildConversations() {
-		const inboxId: number = (await this.db('boxes').first('id').where('name', '=', 'INBOX')).id;
+	private async updateChains() {
+		const findChain = async (id: number, reply_to: string): Promise<number> => {
+			const parentRows: {id: number, reply_to: string, chain: number}[] = await this.db('messages').select(['id', 'reply_to', 'chain']).where('hash', '=', reply_to);
+			
+			let chain: number = 0;
 
-		const convBoxes: number[] = (await this.db('boxes').select('id')
-			.where('useInConversations', '=', true)).map((row) => row.id);
+			if (parentRows.length != 1) chain = (await this.db('messages').max('chain'))[0]['max(`chain`)'] as number + 1;
+			else if (parentRows[0].chain != 0) chain = parentRows[0].chain;
+			else chain = await findChain(parentRows[0].id, parentRows[0].reply_to);
 
-			const baseEmails: string[] = (await this.db('messages').distinct('senders')
-			.where('box_id', '=', inboxId).select('senders')).map((row) => row.senders);
+			await this.db('messages').update({chain: chain}).where('id', '=', id);
+			return chain;
+		}
 
-		await Promise.all(baseEmails.map(async (participants: string) => {
-			let chain: SQLMessage[] = [];
+		let row: {id: number, reply_to: string}[] = [];
+		while ((row = await this.db('messages').orderBy('seqno', 'desc').select(['id', 'reply_to']).where('chain', '=', 0).limit(1)).length == 1) {
+			await findChain(row[0].id, row[0].reply_to);
+		}
 
-			(await this.db('messages').select(['box_id', 'id', 'date', 'subject']).whereIn('box_id', convBoxes)
-				.andWhere(function() { this.where('senders', '=', participants).orWhere('recipients', '=', participants); }))
-				.map((row) => chain.push(row));
+		const chains = (await this.db('chains').select('id')).map(e => e.id);
+		let unChains = (await this.db('messages').distinct('chain')).filter(e => !chains.includes(e.chain)).map(e => e.chain);
 
-			chain.sort((a, b) => a.date < b.date ? -1 : 1);
+		await Promise.all(unChains.map(async (chainId: number) => {
+			const latest: SQLMessage = (await this.db('messages').select('*').where('chain', '=', chainId).orderBy('seqno', 'desc').limit(1))[0];
 
-			let topic = chain[chain.length - 1].subject;
+			let archived = !(await this.db('boxes').select('current').where('id', '=', latest.box))[0].current
+
+			let topic = latest.subject;
 			if (/<?No subject>?/gi.test(topic) || topic == "") topic = "No Topic";
 
 			topic = topic
 				.replace(/^((re|fwd|fw)[: ]+)+/gi, "")					 // Remove junk at the start of the topic.
-				.replace(/^\w/, (c: string) => c.toUpperCase()); // Title case the string.
+				.replace(/^\w/, (c: string) => c.toUpperCase()); // Title case the string. 
 
-			const conv_id = (await this.db('conversations').insert({
+			const chain: SQLChain = {
+				id: chainId,
 				topic: topic,
-				date: chain[chain.length - 1].date,
-				participants: participants
-			} as SQLConversation))[0];
+				date: latest.date,
+				participants: latest.senders,
 
-			const ids = chain.map((elem: SQLMessage) => elem.id);
-			await this.db('messages').whereIn('id', ids).update("conv_id", conv_id);
+				archived: archived
+			}
+
+			await this.db('chains').insert(chain);
 		}));
 	}
 
@@ -414,14 +427,14 @@ export class LocalStore {
 		const duplicateIDs = (await this.db('bodies').select('id').whereIn('id', dbIds)).map((row) => row.id);
 		for (let id of duplicateIDs) dbIds.splice(dbIds.indexOf(id), 1);
 
-		let messages: {id: number, uid: number, box_id: number}[] = 
-			await this.db('messages').whereIn('id', dbIds).select(['id', 'uid', 'box_id']);
+		let messages: {id: number, uid: number, box: number}[] = 
+			await this.db('messages').whereIn('id', dbIds).select(['id', 'uid', 'box']);
 			
 		let parsePromises: Promise<{data: any, uid: number}>[] = [];
 
-		let retrieveBodies = async (messages: {id: number, uid: number, box_id: number}[]) => {
+		let retrieveBodies = async (messages: {id: number, uid: number, box: number}[]) => {
 			if (messages.length == 0) return;
-			const boxPath: string = (await this.db('boxes').where('id', '=', messages[0].box_id).select('path'))[0].path;
+			const boxPath: string = (await this.db('boxes').where('id', '=', messages[0].box).select('path'))[0].path;
 			
 
 			await this.conn.box(boxPath).uidFetch(messages.map((r) => r.uid), { bodies: "", struct: true }, (msg: any, _seqno: number) => {
@@ -444,11 +457,11 @@ export class LocalStore {
 			});
 		}
 
-		messages.sort((a, b) => a.box_id < b.box_id ? 1 : -1);
+		messages.sort((a, b) => a.box < b.box ? 1 : -1);
 
 		let startInd = 0;
 		for (let i = 0; i < messages.length; i++) {
-			if (messages[i].box_id != messages[startInd].box_id) {
+			if (messages[i].box != messages[startInd].box) {
 				await retrieveBodies(messages.slice(startInd, i));
 				startInd = i;
 			}

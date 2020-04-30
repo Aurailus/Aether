@@ -2,12 +2,12 @@ import * as React from 'react';
 
 import './AccountConversationItem.scss';
 
-import { ConversationListing } from '../../data/Conversation';
+import { ChainListing } from '../../data/Chains';
 
 const convIcon = require('../../../res/all-mail.svg');
 
 export interface AccountConversationItemProps {
-    conversation: ConversationListing;
+    chain: ChainListing;
     hasUnread: boolean;
     active: boolean;
     onClick: () => void;
@@ -24,8 +24,8 @@ export class AccountConversationItem extends React.Component<AccountConversation
         <img src={convIcon} />
         {/*<span className="AccountConversationItem-unreadIndicator">{this.props.conversation.messageIds.length}</span>*/}
         <div className="AccountConversationItem-content">  
-          <h3>{this.props.conversation.participants}</h3>
-          <h4>{/*<img src={subjectIcon} />*/}{this.props.conversation.topic}</h4>
+          <h3>{this.props.chain.topic}</h3>
+          <h4>{/*<img src={subjectIcon} />*/}{this.props.chain.participants}</h4>
         </div>
       </div>
     );

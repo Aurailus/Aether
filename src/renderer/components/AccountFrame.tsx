@@ -8,7 +8,7 @@ import { AccountConversationBar } from './AccountConversationBar';
 import { ConversationPane } from './ConversationPane';
 
 import { AccountProps } from '../../data/AccountProps';
-import { ConversationListing, ConversationDetails } from '../../data/Conversation';
+import { ChainListing, ChainDetails } from '../../data/Chains';
 
 interface Props {
     account: AccountProps;
@@ -17,35 +17,35 @@ interface Props {
 }
 
 interface State {
-    conversations: ConversationListing[];
-    convDetails: ConversationDetails | null;
+    chains: ChainListing[];
+    chainDetails: ChainDetails | null;
     activeConv: number; 
 }
 
 export class AccountFrame extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
-    this.state = { conversations: [], convDetails: null, activeConv: -1 };
+    this.state = { chains: [], chainDetails: null, activeConv: -1 };
 
-    ipcRenderer.on('conversation-listings', (_: Electron.IpcMessageEvent, conversations: ConversationListing[]) => 
+    ipcRenderer.on('conversation-listings', (_: Electron.IpcMessageEvent, conversations: ChainListing[]) => 
       this.handleConversationListings(conversations));
-    ipcRenderer.on('conversation-details',  (_: Electron.IpcMessageEvent, conversation: ConversationDetails) => 
+    ipcRenderer.on('conversation-details',  (_: Electron.IpcMessageEvent, conversation: ChainDetails) => 
       this.handleConversationDetails(conversation));
 
     this.convClicked = this.convClicked.bind(this);
   }
 
-  handleConversationListings(conversations: ConversationListing[]) {
-    this.setState({ activeConv: -1, conversations: conversations });
+  handleConversationListings(chains: ChainListing[]) {
+    this.setState({ activeConv: -1, chains: chains });
   }
 
-  handleConversationDetails(conversation: ConversationDetails) {
-    this.setState({ convDetails: conversation });
+  handleConversationDetails(chain: ChainDetails) {
+    this.setState({ chainDetails: chain });
   }
 
-  convClicked(conv: ConversationListing): void {
+  convClicked(conv: ChainListing): void {
     ipcRenderer.send('conversation-open', conv.id);
-    this.setState({ activeConv: this.state.conversations.indexOf(conv) || 0, convDetails: null });
+    this.setState({ activeConv: this.state.chains.indexOf(conv) || 0, chainDetails: null });
   }
 
   render() {
@@ -54,16 +54,16 @@ export class AccountFrame extends React.Component<Props, State> {
         <AccountConversationBar
           account={this.props.account}
           refreshing={this.props.refreshing}
-          conversations={this.state.conversations}
+          chains={this.state.chains}
           activeConv={this.state.activeConv}
           convClicked={this.convClicked}
           refreshClicked={this.props.refreshClicked.bind(this, this.props.account.id)}
         />
-        <ConversationPane conversation={this.state.convDetails}/>
+        <ConversationPane chain={this.state.chainDetails}/>
         <LoadingSpinner 
           style={{position: 'absolute', top: '16px', right: '16px', width: '24px', height: '24px'}}
           visible={this.state.activeConv != -1 && 
-                   this.state.conversations[this.state.activeConv].messageIds.length > 0} 
+                   this.state.chains[this.state.activeConv].messageIds.length > 0} 
         />
       </div>
     );

@@ -30,7 +30,7 @@ export class AccountManager {
 
 			this.send.send('account-load', account.props);
 			if (this.currentAccountKey == name)
-				this.send.send('conversation-listings', await account.getConversationListings());
+				this.send.send('conversation-listings', await account.getChainListings());
 		}));
 	}
 
@@ -50,7 +50,7 @@ export class AccountManager {
 			!this.accounts[this.currentAccountKey].props.loaded) return;
 
 		this.send.send('conversation-listings', []);
-		const listings = await this.accounts[this.currentAccountKey].getConversationListings();
+		const listings = await this.accounts[this.currentAccountKey].getChainListings();
 		setTimeout(() => this.send.send('conversation-listings', listings), 300);
 	}
 
@@ -59,63 +59,6 @@ export class AccountManager {
 			!this.accounts[this.currentAccountKey].props.loaded) return;
 
 		this.send.send('conversation-details',
-			await this.accounts[this.currentAccountKey].getConversationDetails(convId));
+			await this.accounts[this.currentAccountKey].getChainDetails(convId));
 	}
-
-	// async collectConversationBodies(conversation: MessageConversation) : Promise<void> {
-	// 	for (let i = 0; i < conversation.headers.length; i++) conversation.contents.push({ body: "", uid: -1 });
-		
-	// 	let box: string = "";
-
-	// 	// Collect all of the raw bodies for the messages.
-
-	// 	while(true) {
-	// 		for (let i = 0; i < conversation.headers.length; i++) {
-	// 			if (conversation.contents[i].uid == -1) {
-	// 				box = conversation.headers[i].box;
-	// 				break;
-	// 			}
-	// 		}
-
-	// 		if (box == "") break;
-
-	// 		let uids: number[] = [];
-
-	// 		for (let i = 0; i < conversation.headers.length; i++) {
-	// 			if (conversation.headers[i].box == box) {
-	// 				conversation.contents[i].uid = conversation.headers[i].uid;
-	// 				uids.push(conversation.headers[i].uid);
-	// 			}
-	// 		}
-
-	// 		await this.currentConn!.openBox(box);
-	// 		await this.currentConn!.getMessageContents(uids, (content: any, attrs: any) => {
-	// 			for (let i = 0; i < conversation.contents.length; i++) {
-	// 				if (conversation.contents[i].uid == attrs.uid) {
-	// 					conversation.contents[i].body = content;
-	// 				}
-	// 			}
-	// 		});
-
-	// 		box = "";
-	// 	}
-
-	// 	// Parse through all of the bodies asynchronously.
-
-	// 	let promises: any[] = [];
-	// 	for (let ind in conversation.contents) {
-	// 		promises.push(new Promise(async (resolve: (ret: any[]) => void, reject: () => void) => {
-	// 			resolve([await simpleParser(conversation.contents[ind].body, {}), ind]);
-	// 		}));
-	// 	}
-
-	// 	for (let ans of await Promise.all(promises)) {
-	// 		conversation.contents[ans[1]].body = ans[0];
-	// 	}
-
-	// 	// Strip introductions regex: /(^(Hey|Hello|Hi) *(there|everyone|everybody|guys|gals|girls|dudes|people|friends|NAMES)*[\.,:]*[\n\s]+)/gim
-	// 	// Strip signatures regex: /[\n\s]+(thanks|thank you)+.*/gims
-	// 	// Strip conversation history regex: /(From:|On)[ \w]+([\[<].+[\]>]|\d{2,4}-\d{2,4}-\d{2,4}|[ \w,\.]{1,10}\d{2,4}).*/gims
-	// 	return;
-	// }
 }

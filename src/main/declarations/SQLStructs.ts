@@ -1,7 +1,7 @@
 export interface SQLMessage {
 	id?: number;
-	box_id: number;
-	conv_id: number;
+	
+	box: number;
 
 	subject: string;
 	date: number;
@@ -14,6 +14,7 @@ export interface SQLMessage {
 
 	hash: string;
 	reply_to?: string | null;
+	chain?: number;
 }
 
 export interface SQLBox {
@@ -27,13 +28,17 @@ export interface SQLBox {
 
 	parent: number;
 	children: string;
+
+	current: boolean;
 }
 
-export interface SQLConversation {
+export interface SQLChain {
 	id?: number;
 	
 	topic: string;
 	date: number;
+
+	archived: boolean;
 
 	participants: string;
 }

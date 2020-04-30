@@ -2,7 +2,7 @@ import { ImapPool } from './ImapPool';
 
 import { AccountProps } from '../../data/AccountProps';
 import { SerializedAccount } from '../../data/SerializedAccount';
-import { ConversationListing, ConversationDetails } from '../../data/Conversation';
+import { ChainListing, ChainDetails } from '../../data/Chains';
 
 import { LocalStore } from './LocalStore';
 
@@ -38,12 +38,12 @@ export class ImapAccount {
 		this.props.loaded = true;
 	}
 
-	async getConversationListings(): Promise<ConversationListing[]> {
-		return await this.localStore.getConversationListings();
+	async getChainListings(): Promise<ChainListing[]> {
+		return await this.localStore.getChainListings();
 	}
 
-	async getConversationDetails(convID: number): Promise<ConversationDetails> {
-		return this.localStore.getConversationDetails(convID);
+	async getChainDetails(chainID: number): Promise<ChainDetails> {
+		return this.localStore.getChainDetails(chainID);
 	}
 
 	// getMessageContents(message: number | string | number[], callback: (body: any, attrs: any) => void) {

@@ -4,7 +4,7 @@ import ReactCSSTransitionGroup from 'react-addons-css-transition-group';
 
 import './AccountConversationList.scss';
 
-import { ConversationListing } from '../../data/Conversation';
+import { ChainListing } from '../../data/Chains';
 
 import * as FormatDate from '../../util/FormatDate';
 
@@ -17,9 +17,9 @@ const archiveIcon = require('../../../res/ico/icon-archived.svg');
 interface Props {
     accountName: string;
     accountEmail: string;
-    conversations: ConversationListing[];
+    chains: ChainListing[];
     activeConv: number;
-    convClicked: (message: ConversationListing) => void;
+    convClicked: (message: ChainListing) => void;
 }
 
 export class AccountConversationList extends React.Component<Props, {}> {
@@ -31,7 +31,7 @@ export class AccountConversationList extends React.Component<Props, {}> {
   }
 
   convClicked(ind: number) {
-    this.props.convClicked(this.props.conversations[ind]);
+    this.props.convClicked(this.props.chains[ind]);
   }
 
   archivedClicked() {
@@ -88,7 +88,7 @@ export class AccountConversationList extends React.Component<Props, {}> {
           transitionEnterTimeout={200}
           transitionLeaveTimeout={200}
         >
-          {this.props.conversations.map((conv, ind) => {
+          {this.props.chains.map((conv, ind) => {
             let date = new Date(conv.lastMessageDate);
             date!.setHours(0, 0, 0, 0);
 
@@ -100,9 +100,9 @@ export class AccountConversationList extends React.Component<Props, {}> {
             returns.push((
               <AccountConversationItem
                 key={ind}
-                conversation={conv}
+                chain={conv}
                 hasUnread={true}
-                active={this.props.activeConv != -1 && this.props.conversations[this.props.activeConv].id == conv.id}
+                active={this.props.activeConv != -1 && this.props.chains[this.props.activeConv].id == conv.id}
                 onClick={this.convClicked.bind(this, ind)}
               />  
             ));

@@ -4,10 +4,10 @@ import './ConversationFeed.scss';
 
 import { MessageFrame } from './MessageFrame';
 
-import { ConversationDetails } from '../../data/Conversation';
+import { ChainDetails } from '../../data/Chains';
 
 interface Props {
-  conv: ConversationDetails
+  chain: ChainDetails
 }
 
 export class ConversationFeed extends React.Component<Props, {}> {
@@ -17,10 +17,10 @@ export class ConversationFeed extends React.Component<Props, {}> {
     return (
     <main className="ConversationFeed">
       <ul>
-        {this.props.conv.messages.slice(0).reverse().map((_, ind): any | null => {
-          ind = this.props.conv.messages.length - ind - 1;
+        {this.props.chain.messages.slice(0).reverse().map((_, ind): any | null => {
+          ind = this.props.chain.messages.length - ind - 1;
           let returns: any[] = [];
-          returns.push(<MessageFrame key={ind} message={this.props.conv.messages[ind]} />);
+          returns.push(<MessageFrame key={ind} message={this.props.chain.messages[ind]} />);
           if (ind > 0) returns.push(<hr className="ConversationFeed-hr" key={ind + "_hr"} />);
           return returns;
         })}

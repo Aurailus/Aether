@@ -1,0 +1,78 @@
+@import './vars';
+
+.FormManager-Form {
+  & > hr {
+  	margin-top: 24px;
+  	border: none;
+	  border-bottom: 2px solid $gray-4;
+  }
+
+	.FormManager-FormNavWrap {
+		display: flex;
+		flex-direction: row-reverse;
+		margin: 0;
+		margin-right: -8px;
+
+		user-select: none;
+		text-align: right;
+
+		.FormManager-FormNavButton {
+			width: auto;
+			display: inline-block;
+			position: relative;
+			
+			margin: 30px 8px 0px 0px;
+			padding: 12px 16px;
+
+			color: #fff;
+			outline: 0;
+			cursor: pointer;
+			background-color: #546e7a;
+			border-radius: 4px;
+			border: none;
+
+		  font-family: $body-font-family;
+		  font-weight: 500;
+			font-size: 14px;
+
+			transition: background-color 0.1s;
+
+			&.next {
+				background-color: $teal-1;
+				padding-right: 38px;
+
+				&:not([disabled]) { &:hover, &:focus {
+					background-color: $teal-2;
+				}}
+			}
+
+			img {
+				position: absolute;
+				top: 9px;
+				right: 10px;
+				width: 22px;
+				transition: right 0.1s;
+			}
+			
+			&:not([disabled]) {
+				&:hover, &:focus {
+					background-color: #607d8b;
+					
+					img {
+						right: 8px;
+					}
+				}
+			}
+
+			&[disabled] {
+				background-color: #424e54;
+				color: #aabbaf;
+				cursor: not-allowed;
+
+				img {
+					opacity: 0.5;
+				}
+			}
+		}
+	}
+}

@@ -3,7 +3,7 @@
 .AccountCreateModal {
 	width: 500px;
 	height: auto;
-	overflow: hidden;
+	// overflow: hidden;
 	display: block;
 	box-sizing: content-box;
 
@@ -38,87 +38,17 @@
     font-family: $body-font-family;
     font-weight: 500;
     font-size: 16px;
-    padding-top: 1px;
     opacity: 0.7;
 		user-select: none;
   }
 }
 
+.AccountCreateModal-error {
+  display: block;
+  padding: 8px;
 
-form {
-  hr {
-  	margin-top: 24px;
-  	// margin-bottom: -4px;
-  	border: none;
-	  border-bottom: 2px solid $gray-4;
-  }
-
-	.AccountCreateModal-FormNavWrap {
-		display: block;
-		margin: 0;
-		margin-right: -8px;
-
-		user-select: none;
-		text-align: right;
-
-		.AccountCreateModal-FormButton {
-			width: auto;
-			display: inline-block;
-			position: relative;
-			
-			margin: 30px 8px 0px 0px;
-			padding: 12px 38px 12px 16px;
-
-			color: #fff;
-			outline: 0;
-			cursor: pointer;
-			background-color: $teal-1;
-			border-radius: 4px;
-			border: none;
-
-		  font-family: $body-font-family;
-		  font-weight: 500;
-			font-size: 14px;
-
-			transition: background-color 0.1s;
-
-			img {
-				position: absolute;
-				top: 9px;
-				right: 10px;
-				width: 22px;
-				transition: right 0.1s;
-			}
-			
-			&:not([disabled]) {
-				&:hover, &:focus {
-					background-color: $teal-2;
-					
-					img {
-						right: 8px;
-					}
-				}
-			}
-
-			&[disabled] {
-				background-color: #546e7a;
-				color: #aabbaf;
-				cursor: not-allowed;
-
-				img {
-					opacity: 0.5;
-				}
-			}
-		}
-
-
-		.AccountCreateModal-FormButton.back {
-			background-color: #546e7a;
-			padding-right: 16px;
-
-			&:hover, &:focus {
-				background-color: #607d8b;
-			}
-		}
-	}
+  background-color: #4c212c;
+  border: 2px solid #e85b63;
+  border-radius: 4px;
+  color: #ffc6c6;
 }

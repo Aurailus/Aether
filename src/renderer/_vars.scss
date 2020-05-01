@@ -17,6 +17,19 @@ $teal-4: #7fd4fa;
 $header-gray: $gray-2;
 $header-height: 56px;
 
+@mixin scroll-bar-visible-styles {
+	&::-webkit-scrollbar {
+		// background-color: rgba(0, 0, 0, 0.1);
+	}
+	&::-webkit-scrollbar-thumb {
+		background-color: rgba(0, 0, 0, 0.2);
+
+		&:hover {
+			background-color: rgba(0, 0, 0, 0.4);
+		}
+	}
+}
+
 @mixin scroll-bar {
 	&::-webkit-scrollbar {
 		background-color: transparent;
@@ -31,17 +44,13 @@ $header-height: 56px;
 	}
 
 	&:hover {
-		&::-webkit-scrollbar {
-			// background-color: rgba(0, 0, 0, 0.1);
-		}
-		&::-webkit-scrollbar-thumb {
-			background-color: rgba(0, 0, 0, 0.2);
-
-			&:hover {
-				background-color: rgba(0, 0, 0, 0.4);
-			}
-		}
+		@include scroll-bar-visible-styles;
 	}
+}
+
+@mixin scroll-bar-visible {
+	@include scroll-bar;
+	@include scroll-bar-visible-styles;
 }
 
 @mixin ellipsis {

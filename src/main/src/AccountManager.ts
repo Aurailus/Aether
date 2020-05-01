@@ -1,6 +1,7 @@
 import { WebContents, ipcMain as recv } from 'electron';
 import { SerializedAccount } from '../../data/SerializedAccount';
 import { ImapAccount } from './ImapAccount';
+import { ImapConn } from './ImapConn';
 
 const fs = require('fs').promises; 
 
@@ -12,8 +13,9 @@ export class AccountManager {
 	constructor(send: WebContents) {
 		this.send = send;
 
-		recv.on('account-open', 		 (_: Electron.IpcMessageEvent, acctId: string) => this.handleAccountOpen(acctId));
-		recv.on('conversation-open', (_: Electron.IpcMessageEvent, convId: number) => this.handleConversationOpen(convId));
+		recv.on('test-account', 		 (_: any, acct: SerializedAccount) => this.handleTestAccount(acct));
+		recv.on('account-open', 		 (_: any, acctId: string) => this.handleAccountOpen(acctId));
+		recv.on('conversation-open', (_: any, convId: number) => this.handleConversationOpen(convId));
 	}
 
 	private addAccount(account: ImapAccount) {
@@ -59,6 +61,21 @@ export class AccountManager {
 			if (this.currentAccountKey == name)
 				this.send.send('conversation-listings', await account.getChainListings());
 		}));
+	}
+
+	async handleTestAccount(acct: SerializedAccount) {
+		let dead = false;
+		recv.once('test-cancel', () => (dead = true));
+
+		try {
+			let test = new ImapConn(acct, () => {});
+			await test.connect();
+
+			if (!dead) this.send.send('test-result', true, await test.getBoxList());
+		}
+		catch (e) {
+			if (!dead) this.send.send('test-result', false, e.message);
+		}
 	}
 
 	handleAccountOpen(id: string) {

@@ -1,78 +1,40 @@
 import * as React from 'react';
+import * as ReactDOM from 'react-dom'
 import './Modal.scss';
 
-export interface ModalProps {
-    state: string;
-    title: string;
-    content: string;
-    buttonConfirm?: { title: string; callback: any };
-    buttonCancel?: { title: string; callback: any };
+const root = document.getElementsByTagName('body')[0];
+
+interface Props {
+  children: any;
+  style: any;
 }
 
-export class Modal extends React.Component<ModalProps, { visible: boolean }> {
-    constructor(props: any) {
-      super(props);
+export class Modal extends React.Component<Props, {}> {
+  el: HTMLDivElement;
 
-      this.state = {
-        visible: false
-    };
-
-      setTimeout(() => {
-        this.setState({ visible: true });
-    }, 16);
-
-      this.cancelPressed = this.cancelPressed.bind(this);
-      this.confirmPressed = this.confirmPressed.bind(this);
+  constructor(props: Props) {
+    super(props);
+    this.el = document.createElement('div');
+    this.el.classList.add('Modal');
   }
 
-    cancelPressed() {
-      if (this.props.buttonCancel && this.state.visible) {
-        this.props.buttonCancel.callback();
-        this.setState({ visible: false });
-    }
+  componentDidMount() {
+    root.appendChild(this.el);
   }
 
-    confirmPressed() {
-      if (this.props.buttonConfirm && this.state.visible) {
-        this.props.buttonConfirm.callback();
-        this.setState({ visible: false });
-    }
+  componentWillUnmount() {
+    root.removeChild(this.el);
   }
 
-    render() {
-      let state = 'info';
-      if (this.props.state === 'success') state = 'success';
-      if (this.props.state === 'error') state = 'error';
-
-      let modalButtons = null;
-
-      if (this.props.buttonConfirm || this.props.buttonCancel) {
-        modalButtons = (
-        <div className="Modal-button-wrap">
-          {this.props.buttonCancel ? (
-            <button onClick={this.cancelPressed}>{this.props.buttonCancel.title}</button>
-          ) : null}
-          {this.props.buttonConfirm ? (
-            <button className="main" onClick={this.confirmPressed}>
-              {this.props.buttonConfirm.title}
-            </button>
-          ) : null}
-        </div>
-      );
+  render() {
+    for (let key in this.props.style) {
+      //@ts-ignore
+      this.el.style[key] = this.props.style[key];
     }
-
-      return (
-      <div className={`Modal ${this.state.visible ? 'visible' : ''}`}>
-        <div className={`Modal-box  ${state}`}>
-          <div className="Modal-title-wrap">
-            <h1>{this.props.title}</h1>
-          </div>
-          <div className="Modal-content-wrap">
-            <p>{this.props.content}</p>
-          </div>
-          {modalButtons}
-        </div>
-      </div>
+    
+    return ReactDOM.createPortal(
+      this.props.children,
+      this.el
     );
   }
 }

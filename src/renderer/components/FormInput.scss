@@ -4,15 +4,25 @@
 	position: relative;
 	padding-top: 28px;
 
-	&.inl-70-pad {
+	$padSize: 12px;
+
+	&.inl-70 {
 		display: inline-block;
-		width: calc(70% - 12px);
-		margin-right: 12px;
+
+		&.pad {
+			width: calc(70% - #{$padSize});
+			margin-right: $padSize;
+		}
 	}
 
 	&.inl-30 {
 		display: inline-block;
 		width: 30%;
+
+		&.pad {
+			width: calc(70% - #{$padSize});
+			margin-right: $padSize;
+		}
 	}
 	
 	.FormInput-Label {
@@ -55,13 +65,10 @@
 		width: 100%;
 
 		background-color: $gray-2;
-		border: none;
-
 		padding: 8px 6px;
 		border-radius: 4px;
-
-		color: #fff;
 		border: 2px solid transparent;
+		color: #fff;
 		outline: 0;
 
 	  font-family: $body-font-family;
@@ -72,6 +79,16 @@
 
 		&:focus {
 			border: 2px solid transparentize($teal-4, 0.5);
+		}
+	}
+
+	&.invalid:not(:focus-within) {
+		.FormInput-Label {
+			color: #ff969c;
+		}
+
+		.FormInput-Input {
+			background-color: #352122;
 		}
 	}
 }

@@ -49,32 +49,41 @@ export class ImapConn {
 
 	private currentBox: ImapBox|null = null;
 
-	constructor(credentials: SerializedAccount, onFree: (conn: ImapConn) => void) {
-		this.conn = new Imap(credentials);
+	constructor(acct: SerializedAccount, onFree: (conn: ImapConn) => void) {
+		this.conn = new Imap({
+			user: acct.imap_user,
+			password: acct.password,
+			host: acct.imap_host,
+			port: acct.imap_port,
+			tls: true
+		});
+
 		this.lock = new Lock();
 		this.onFree = onFree;
-		this.lock.onExpire(() => {
-			// this.currentBox = null;
-			this.onFree(this);
-		});
+		this.lock.onExpire(() => this.onFree(this));
 	}
 
 	//
-	// Connect (or reconnect) to the remove server.
+	// Connect (or reconnect) to the remote server.
 	//
 	async connect() {
 		await new Promise((resolve: () => void, reject: (error: string) => void) => {
 			if (this.connected) { resolve(); return; }
 
-			this.conn.once('ready', () => { this.connected = true; resolve() });
-			this.conn.once('error', (e: any) => reject(`Failed to connect to server, error: ${e}`));
-			this.conn.once('close', (error: boolean) => {
-				if (error) throw "Connection closed with an error";
-				this.connected = false;
-				this.currentBox = null;
-				this.conn.connect();
-			})
+			this.conn.once('ready', () => { 
+				this.connected = true; 
 
+				this.conn.once('close', (error: boolean) => {
+					if (error) throw "Connection closed with an error";
+					this.connected = false;
+					this.currentBox = null;
+					this.conn.connect();
+				});
+				
+				resolve(); 
+			});
+
+			this.conn.once('error', reject);
 			this.conn.connect();
 		});
 	}

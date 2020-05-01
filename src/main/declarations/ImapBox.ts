@@ -2,7 +2,7 @@ export interface ImapBox {
   name: string;
   attribs: string[];
   delimiter: string;
-  children: { [key: string]: ImapBox } | null;
+  children: {[key: string]: ImapBox} | null;
   parent: ImapBox | null;
 }
 

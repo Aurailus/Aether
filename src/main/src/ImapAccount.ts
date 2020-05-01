@@ -15,10 +15,10 @@ export class ImapAccount {
 	constructor(props: SerializedAccount) {
 		this.props = {
 			id: props.id,
-			address: props.user,
+			address: props.address,
 			
-			name: props.displayName,
-			image: props.displayImage,
+			name: props.label,
+			image: props.pfp,
 
 			loaded: false,
 			hasUnread: false

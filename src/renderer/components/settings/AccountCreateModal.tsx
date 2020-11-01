@@ -2,19 +2,44 @@ import * as React from 'react';
 
 import "./AccountCreateModal.scss";
 
-import { FormManager } from "../FormManager"
-import { LoadingSpinner } from "./LoadingSpinner"
+import { FormManager } from "../../FormManager"
+import { LoadingSpinner } from "../LoadingSpinner"
 
-import { SerializedAccount } from "../../data/SerializedAccount"
-import { ImapBox } from '../../main/declarations/ImapBox'
+import { SerializedAccount } from "../../../data/SerializedAccount"
+import { ImapBoxList } from '../../../main/declarations/ImapBox'
 
 const { ipcRenderer } = require('electron');
+
+interface Props {
+	submit: (fields: AccountCreateModalFields) => void;
+	cancel: () => void;
+}
 
 interface State {
 	error: string;
 }
 
-export class AccountCreateModal extends React.Component<{}, State> {
+export interface AccountCreateModalFields {
+	name: string;
+	email: string;
+	password: string;
+
+	imap_user: string;
+	imap_host: string;
+	imap_port: string;
+
+	smtp_user: string;
+	smtp_host: string;
+	smtp_port: string;
+
+	box_inbox: string;
+	box_sent: string;
+	box_spam: string;
+	box_trash: string;
+	box_archive: string;
+}
+
+export class AccountCreateModal extends React.Component<Props, State> {
 	elem: HTMLElement | null = null;
 	form: FormManager;
 
@@ -27,14 +52,17 @@ export class AccountCreateModal extends React.Component<{}, State> {
 
 		this.form = new FormManager({
 			update: () => this.forceUpdate(),
+			submit: this.props.submit,
+			cancel: this.props.cancel
 		}, [{
 			fields: [
-				{name: "name", label: "Name", props: {maxLength: 64}, validate: "NotEmpty", default: "Nicole"},
-				{name: "email", label: "Email", props: {maxLength: 128}, validate: "Email", default: "me@auri.xyz"},
+				{name: "name", label: "Name", props: {maxLength: 64}, validate: "NotEmpty"},
+				{name: "email", label: "Email", props: {maxLength: 128}, validate: "Email"},
 				{name: "password", type: "password", label: "Password", validate: "NotEmpty"},
 			],
 			nav: {
 				next: "Next",
+				previous: "Cancel",
 				onNext: (form: FormManager) => {
 					if (form.fields.imap_user == "") form.fields.imap_user = form.fields.email;
 					if (form.fields.smtp_user == "") form.fields.smtp_user = form.fields.email;
@@ -42,14 +70,14 @@ export class AccountCreateModal extends React.Component<{}, State> {
 			}
 		}, {
 			fields: [
-				{name: "imap_user", label: "IMAP User", validate: "NotEmpty", default: "me@auri.xyz"},
-				{name: "imap_host", label: "IMAP Host", display: "inl-70 pad", validate: "URL", default: "mail.hover.com"},
+				{name: "imap_user", label: "IMAP User", validate: "NotEmpty"},
+				{name: "imap_host", label: "IMAP Host", display: "inl-70 pad", validate: "URL"},
 				{name: "imap_port", label: "IMAP Port", display: "inl-30", props: {maxLength: 5}, default: "993", validate: "Number"},
 
 				{type: "HR"},
 				
-				{name: "smtp_user", label: "SMTP User", validate: "NotEmpty", default: "me@auri.xyz"},
-				{name: "smtp_host", label: "SMTP Host", display: "inl-70 pad", validate: "URL", default: "mail.hover.com"},
+				{name: "smtp_user", label: "SMTP User", validate: "NotEmpty"},
+				{name: "smtp_host", label: "SMTP Host", display: "inl-70 pad", validate: "URL"},
 				{name: "smtp_port", label: "SMTP Port", display: "inl-30", props: {maxLength: 5}, default: "587", validate: "Number"},
 			],
 			nav: {
@@ -80,17 +108,32 @@ export class AccountCreateModal extends React.Component<{}, State> {
 			}
 		}, {
 			fields: [
-				{name: "box_sent", type: "boxlist", label: "Sent Box"},
-				{name: "box_archive", type: "boxlist", label: "Archive Box"}
+				{name: "box_inbox", label: "Inbox", type: "boxlist", display: "inl-50 pad", default: "INBOX"},
+				{name: "box_sent", label: "Sent", type: "boxlist", display: "inl-50", default: "\\Sent"},
+				{name: "box_spam", label: "Spam", type: "boxlist", display: "inl-50 pad", default: "\\Junk"},
+				{name: "box_trash", label: "Trash", type: "boxlist", display: "inl-50", default: "\\Trash"},
+				{type: "DESC", head: "Archive Root", text: "Please select a box to be the root of your Archives." + 
+					"Tagged conversations will be stored as children of this box. Do not select a box that will automatically clear its contents!"},
+				{name: "box_archive", type: "boxlist", default: "Archive"}
 			],
 			nav: {
 				previous: "Back",
-				onPrevious: (form) => form.formBack(null, false)
+				next: "Done",
+				onPrevious: (form) => {
+		  		for (let field of this.form.pages[3].fields!) {
+		  			if (field.type == "boxlist") {
+		  				field.boxList = new ImapBoxList();
+		  				this.form.fields[field.name!] = "";
+		  			}
+		  		}
+
+					form.formBack(null, false)
+				}
 			}
 		}])
 	}
 
-	componentWillUpdate() { 
+	componentDidUpdate() { 
 		setTimeout(() => this.updateHeight(), 0); 
 	}
 
@@ -103,7 +146,7 @@ export class AccountCreateModal extends React.Component<{}, State> {
   	ipcRenderer.off('test-result', this.handleTestResult);
   }
 
-  private handleTestResult(_: any, success: boolean, v: string | {[key: string]: ImapBox}) {
+  private handleTestResult(_: any, success: boolean, v: string | ImapBoxList) {
   	if (!success) {
   		this.setState({error: v as string});
   		this.form.formBack();
@@ -111,8 +154,8 @@ export class AccountCreateModal extends React.Component<{}, State> {
   	}
   	else {
   		this.form.formForward();
-  		this.form.pages[3].fields![0].boxes = v as {[key: string]: ImapBox};
-  		this.form.pages[3].fields![1].boxes = v as {[key: string]: ImapBox};
+  		for (let field of this.form.pages[3].fields!)
+  			if (field.type == "boxlist") field.boxList = new ImapBoxList((v as ImapBoxList).boxes);
   		this.forceUpdate();
   	}
   }
@@ -126,8 +169,8 @@ export class AccountCreateModal extends React.Component<{}, State> {
 	render() {
 		return (
 			<div className="AccountCreateModal" ref={(e) => this.elem = e}>
-				<h1>Add Account</h1>
-				<p>The first step to improving your email experience.</p>
+				<h1>{this.form.page < 3 ? "Add Account" : "Configuration"}</h1>
+				<p>{this.form.page < 3 ? "The first step to improving your email experience." : "Please ensure the following options are correct:"}</p>
 
 				{this.state.error != "" && <p className="AccountCreateModal-error">{this.state.error}</p>}
 

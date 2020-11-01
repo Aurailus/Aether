@@ -12,8 +12,6 @@ import { ChainListing, ChainDetails } from '../../data/Chains';
 
 interface Props {
     account: AccountProps;
-    refreshing: boolean;
-    refreshClicked: (id: string) => void;
 }
 
 interface State {
@@ -25,13 +23,11 @@ interface State {
 export class AccountFrame extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
+
+    ipcRenderer.on('conversation-listings', (_: any, conversations: ChainListing[]) => this.handleConversationListings(conversations));
+    ipcRenderer.on('conversation-details',  (_: any, conversation: ChainDetails) => this.handleConversationDetails(conversation));
+
     this.state = { chains: [], chainDetails: null, activeConv: -1 };
-
-    ipcRenderer.on('conversation-listings', (_: Electron.IpcMessageEvent, conversations: ChainListing[]) => 
-      this.handleConversationListings(conversations));
-    ipcRenderer.on('conversation-details',  (_: Electron.IpcMessageEvent, conversation: ChainDetails) => 
-      this.handleConversationDetails(conversation));
-
     this.convClicked = this.convClicked.bind(this);
   }
 
@@ -53,11 +49,9 @@ export class AccountFrame extends React.Component<Props, State> {
       <div className="AccountFrame">
         <AccountConversationBar
           account={this.props.account}
-          refreshing={this.props.refreshing}
           chains={this.state.chains}
           activeConv={this.state.activeConv}
           convClicked={this.convClicked}
-          refreshClicked={this.props.refreshClicked.bind(this, this.props.account.id)}
         />
         <ConversationPane chain={this.state.chainDetails}/>
         <LoadingSpinner 

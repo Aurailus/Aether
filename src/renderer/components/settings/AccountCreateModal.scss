@@ -1,24 +1,24 @@
-@import '../vars';
+@import '../../vars';
 
 .AccountCreateModal {
+  position: absolute;
+  top: 50%;
+  left: 50%;
 	width: 500px;
 	height: auto;
-	// overflow: hidden;
+  
 	display: block;
+  // overflow: hidden;
+  transform: translate(-50%, -50%);
 	box-sizing: content-box;
 
-	transition: height 0.2s;
-	
-	position: relative;
-	top: 50%;
-	left: 50%;
-	transform: translate(-50%, -50%);
-
-	background-color: $gray-3;
-	color: #fff;
+  color: #fff;
+  padding: 8px 16px;
 	border-radius: 8px;
-	padding: 8px 16px;
+  background-color: $gray-3;
 	box-shadow: 0px 4px 12px 0px rgba(0, 0, 0, 0.1), 0px 4px 32px 0px rgba(0, 0, 0, 0.1);
+
+  transition: height 0.2s;
 
   & > h1 {
     margin: 0;

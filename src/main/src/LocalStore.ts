@@ -153,8 +153,8 @@ export class LocalStore {
 			
 		conv.participants = (await this.db('contacts').select('name')
 			.whereIn('id', JSON.parse(rawChain.participants))).map((row) => row.name).sort().join(", ");
-		conv.messageIds = 
-			(await this.db('messages').select('id').where('chain', '=', rawChain.id)).map((row) => row.id);
+		//@ts-ignore
+		conv.messageIds = (await this.db('messages').select('id').where('chain', '=', rawChain.id)).map((row) => row.id);
 
 		return conv;
 	}
@@ -214,47 +214,42 @@ export class LocalStore {
 	// and store the information in the `boxes` table in the knex db.
 	//
 	private async syncBoxes() {
-		async function insertBoxes(db: Knex, name: string, box: ImapBox, path?: string, parentId?: number): Promise<{id: number, path: string}> {
-			path = (path ? path + box.delimiter + name : name);
+		async function insertBoxes(db: Knex, box: ImapBox, parentId?: number): Promise<number> {
 
 			let current: boolean = 
-				name == "INBOX" ||
-				box.attribs.includes('\\Sent') || 
-				box.attribs.includes('\\Trash');
+				box.name == "INBOX" ||
+				box.attributes.includes('\\Sent') || 
+				box.attributes.includes('\\Trash');
 
 			let id: number = (await db('boxes').insert({
-				name: name,
-				path: path,
+				name: box.name,
+				path: box.path,
 				delimiter: box.delimiter,
-				attribs: box.attribs.join(' '),
+				attribs: box.attributes.join(' '),
 				parent: (parentId === undefined ? null : parentId),
 				children: JSON.stringify([]),
 				current: current
 			} as SQLBox))[0];
 
 			if (box.children != null) {
-				await Promise.all(Object.keys(box.children).map(async (name: string) => {
-					let child = box.children![name];
-					let dat: {id: number, path: string} = await insertBoxes(db, name, child, path, id);
+				await Promise.all(box.children.map(async (child: ImapBox) => {
+					let childID = await insertBoxes(db, child, id);
 
 					await db('boxes').where('id', '=', id).select('children')
 					.then((rows: {children: string}[]) => {
 						let children: number[] = JSON.parse(rows[0].children) || [];
-						children.push(dat.id);
+						children.push(childID);
 
 						return db('boxes').where('id', '=', id).update({children: children});
 					});
 				}));
 			}
 
-			return {id: id, path: path};
+			return id;
 		}
 
-		const boxes = await this.conn.getBoxList();
-		await Promise.all(Object.keys(boxes).map(async (name: string) => {
-			let box = boxes[name];
-			await insertBoxes(this.db, name, box);
-		}));
+		const list = await this.conn.getBoxList();
+		await Promise.all(list.boxes.map(async (box: ImapBox) => await insertBoxes(this.db, box)));
 	}
 
 	//

@@ -6,24 +6,35 @@
 
 	$padSize: 12px;
 
-	// &.inl-70 {
-	// 	display: inline-block;
+	&.inl-70 {
+		width: 70%;
+		display: inline-block;
 
-	// 	&.pad {
-	// 		width: calc(70% - #{$padSize});
-	// 		margin-right: $padSize;
-	// 	}
-	// }
+		&.pad {
+			width: calc(70% - #{$padSize});
+			margin-right: $padSize;
+		}
+	}
 
-	// &.inl-30 {
-	// 	display: inline-block;
-	// 	width: 30%;
+	&.inl-30 {
+		width: 30%;
+		display: inline-block;
 
-	// 	&.pad {
-	// 		width: calc(70% - #{$padSize});
-	// 		margin-right: $padSize;
-	// 	}
-	// }
+		&.pad {
+			width: calc(70% - #{$padSize});
+			margin-right: $padSize;
+		}
+	}
+
+	&.inl-50 {
+		width: 50%;
+		display: inline-block;
+
+		&.pad {
+			width: calc(50% - #{$padSize});
+			margin-right: $padSize;
+		}
+	}
 	
 	.FormBoxList-Label {
 		user-select: none;
@@ -114,17 +125,25 @@
 			width: 28px;
 			padding-left: 4px;
 			vertical-align: -28%;
-			opacity: 0.4;
+			opacity: 0.6;
 		}
 
 		& > span {
 			padding-left: 10px;
 			vertical-align: middle;
-			opacity: 0.7;
+			opacity: 0.85;
 		}
 
 		&:hover, &:focus {
-			background: linear-gradient(90deg, #{transparentize($gray-0, 0.5)}, #0000);
+			background: linear-gradient(90deg, #{transparentize($gray-4, 0.5)}, #0000);
+		}
+
+		&.selected {
+			position: absolute;
+			top: 27px;
+			left: 2px;
+			user-select: none;
+			pointer-events: none;
 		}
 	}
 
@@ -148,20 +167,32 @@
 		border-right-width: 2px;
 
 		overflow: auto;
-		border-radius: 0px 0px 8px 8px;
+		border-radius: 0px 0px 4px 4px;
 		background-color: $gray-1;
 		box-shadow: 0px 4px 16px -2px rgba(0, 0, 0, 0.2), 0px 12px 32px -2px rgba(0, 0, 0, 0.2);
 
 		transition: max-height 0.15s, border 0.1s;
 	}
 
-	.FormBoxList-Search:focus + .FormBoxList-Dropdown, .FormBoxList-Dropdown:focus-within {
+	.FormBoxList-Search:focus ~ .FormBoxList-Dropdown, .FormBoxList-Dropdown:focus-within {
 		max-height: 216px;
-		padding-bottom: 12px;
+		padding-bottom: 1px;
 
 		border: 2px solid transparentize($teal-4, 0.5);
 		border-top: none;
 		
 		transition: border 0s 0.05s, max-height 0.15s;
 	}
+
+	.FormBoxList-Search:not([value=""]) {
+		& ~ .FormBoxList-BoxItem.selected {
+			display: none;
+		}
+ 	}
+
+	.FormBoxList-Search:focus {
+		& ~ .FormBoxList-BoxItem.selected {
+			opacity: 0.3;
+		}
+ 	}
 }

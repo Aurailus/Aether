@@ -26,8 +26,7 @@ export class AccountIcon extends React.Component<Props, {}> {
             `url("${this.props.account.image}")` : ''}}
         onClick={this.props.onClick}>
 
-        {(!this.props.account.loaded && this.props.account.id != "*") && <LoadingSpinner 
-          visible={true}
+        {(!this.props.account.loaded && this.props.account.id != "*") && <LoadingSpinner visible={true}
           style={{position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '24px', height: '24px'}}
         />}
       </div>

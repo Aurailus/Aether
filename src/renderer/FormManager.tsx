@@ -4,7 +4,7 @@ import "./FormManager.scss";
 
 import { FormInput } from './components/FormInput'
 import { FormBoxList } from './components/FormBoxList'
-import { ImapBox } from '../main/declarations/ImapBox'
+import { ImapBoxList } from '../main/declarations/ImapBox'
 
 const nextButton = require('../../res/ico/icon-next.svg');
 
@@ -15,7 +15,9 @@ const regex_number = /^\d+$/g;
 
 interface Opts {
 	start?: number;
-	update: () => void
+	update: () => void,
+	submit: (fields: any) => void;
+	cancel: () => void;
 }
 
 interface Page {
@@ -41,8 +43,9 @@ interface Elem {
 	default?: string;
 	validate?: string | RegExp;
 	
-	text?: string; // For paragraphs
-	boxes?: {[key: string]: ImapBox}; // For boxLists
+	head?: string; // For desc
+	text?: string; // For paragraphs & desc
+	boxList?: ImapBoxList; // For boxLists
 }
 
 export class FormManager {
@@ -88,6 +91,12 @@ export class FormManager {
 		if (triggerCallbacks === undefined || triggerCallbacks)
 			if (this.pages[this.page].nav.onNext) this.pages[this.page].nav.onNext!(this);
 		
+		if (this.page == this.pages.length - 1) {
+			this.opts.submit(Object.assign({}, this.fields));
+			if (ev) ev.preventDefault();
+			return false;
+		}
+
 		this.page += 1;
 		this.validate();
 
@@ -100,6 +109,12 @@ export class FormManager {
 		if (triggerCallbacks === undefined || triggerCallbacks)
 			if (this.pages[this.page].nav.onPrevious) this.pages[this.page].nav.onPrevious!(this);
 		
+		if (this.page == 0) {
+			this.opts.cancel();
+			if (ev) ev.preventDefault();
+			return false;
+		}
+
 		this.page -= 1;
 		this.validate();
 
@@ -108,8 +123,9 @@ export class FormManager {
 		return false;
 	}
 
-	private handleChange(name: string, ev: any): void {
-		this.fields[name] = ev.target.value;
+	private handleChange(name: string, ev: any|string): void {
+		if (typeof ev == "string") this.fields[name] = ev;
+		else this.fields[name] = ev.target.value;
 
 		this.validate();
 		this.opts.update();
@@ -119,6 +135,12 @@ export class FormManager {
 		let valid = true;
 		for (let elem of this.pages[this.page].fields || []) {
 			const fieldName = elem.name || "";
+			const type = elem.type;
+
+			if (type == "boxlist") {
+				if (this.fields[fieldName] == "") valid = false;
+				continue;
+			}
 
 			const regex = this.regexes[fieldName];
 			if (!regex) continue;
@@ -136,14 +158,20 @@ export class FormManager {
 	render() {
 		const page = this.pages[this.page];
 		let keyID = 0;
-		return (		
-			<form className="FormManager-Form" onSubmit={this.formForward}>
+		return (
+			<form className="FormManager-Form" onSubmit={this.formForward} key={"page_" + page}>
 				{page.raw}
 
 				{page.fields && page.fields.map((fields: Elem, i: number) => {
 
 					if (fields.type && fields.type.toLowerCase() == "p") {
-						return <p key={keyID++}>{fields.text || "<Empty Paragraph>"}</p> 
+						return <p className="FormManager-Para" key={keyID++}>{fields.text || "<Empty Paragraph>"}</p> 
+					}
+					else if (fields.type && fields.type.toLowerCase() == "desc") {
+						return <div key={keyID++}>
+							<h2 className="FormManager-DescHead">{fields.head}</h2>
+							<p  className="FormManager-DescBody">{fields.text}</p>
+						</div>
 					}
 					else if (fields.type && fields.type.toLowerCase() == "hr") {
 						return <hr key={keyID++}/>
@@ -155,19 +183,22 @@ export class FormManager {
 					if (fields.type && fields.type.toLowerCase() == "boxlist") {
 						return <FormBoxList
 							key={fields.name}
-							label={fields.label || fields.name || "<Unnamed Input>"}
+							label={fields.label || ""}
 							name={fields.name || "UNNAMED"}
 
 							fields={this.fields}
 							callback={this.handleChange}
-							boxes={fields.boxes || {}}
+							default={fields.default}
+
+							classes={fields.display}
+							boxList={fields.boxList || new ImapBoxList({})}
 						/>
 					}
 					
 					return <FormInput
 						key={fields.name}
 						type={fields.type || "text"}
-						label={fields.label || fields.name || "<Unnamed Input>"}
+						label={fields.label || ""}
 						name={fields.name || "UNNAMED"}
 
 						fields={this.fields}
@@ -193,6 +224,6 @@ export class FormManager {
 					}
 				</div>
 			</form>
-			)
+		)
 	}
 }

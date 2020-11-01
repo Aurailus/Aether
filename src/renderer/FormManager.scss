@@ -75,4 +75,51 @@
 			}
 		}
 	}
+
+	.FormManager-DescHead {
+		font-family: $header-font-family;
+		font-weight: 500;
+		font-size: 22px;
+		margin-bottom: 4px;
+		user-select: none;
+	}
+
+	.FormManager-DescBody {
+		font-size: 16px;
+		opacity: 0.6;
+		margin: 0;
+		margin-bottom: -16px;
+		user-select: none;
+	}
+
+	.FormManager-Para {
+		font-size: 16px;
+		opacity: 0.6;
+		margin: 0;
+		user-select: none;
+	}
+}
+
+// Transition Group
+
+.FormManager-transition-enter {
+  opacity: 0.01;
+  transform: translateY(4px);
+
+  &.FormManager-transition-enter-active {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 0.2s, transform 0.2s;
+  }
+}
+
+.FormManager-transition-leave {
+  opacity: 1;
+  transform: translateY(0);
+
+  &.FormManager-transition-leave-active {
+    opacity: 0.01;
+    transform: translateY(4px);
+    transition: opacity 0.2s, transform 0.2s 0.05s;
+  }
 }

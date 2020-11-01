@@ -3,54 +3,37 @@ const { ipcRenderer } = require('electron');
 
 import './App.scss';
 
-import { AccountBar } from './AccountBar';
-import { AccountFrame } from './AccountFrame';
-import { SettingsView } from './SettingsView';
+import { MainView } from './MainView'; 
+import { SettingsView } from './settings/SettingsView';
 
 import { AccountProps } from '../../data/AccountProps';
 
 const allMailImg = require('../../../res/all-mail.svg');
 export const ALL_ACCOUNT_ID: string = '*';
 
-interface AccountState {
-  activeAccount: string;
-}
-
-interface SettingsState {
-  page: string;
-}
-
 interface State {
   accounts: { [key: string]: AccountProps };
-  loc: AccountState | SettingsState;
+  settings: string;
 }
 
 export class App extends React.Component<{}, State> {
   constructor(props: any) {
     super(props);
 
-    this.state = {
-      accounts: {},
-      loc: { activeAccount: '' },
-    };
-
     ipcRenderer.send('reload');
 
-    ipcRenderer.on('account-add',  (_: any, acct: AccountProps) => this.addAccountHandler(acct));
+    ipcRenderer.on('settings',   (_: any, page: string) => this.setState({ settings: page }));
+    ipcRenderer.on('account-add', (_: any, acct: AccountProps) => this.addAccountHandler(acct));
     ipcRenderer.on('account-load', (_: any, acct: AccountProps) => this.loadAccountHandler(acct));
 
-    ipcRenderer.on('settings', (_: any, page: string) => this.setState({loc: { page: page }}));
-
-    this.refreshClickHandler = this.refreshClickHandler.bind(this);
-    this.accountClickHandler = this.accountClickHandler.bind(this);
+    this.state = { accounts: {}, settings: "" };
   }
 
   addAccountHandler(account: AccountProps) {
     const accounts = Object.assign({}, this.state.accounts);
     accounts[account.id] = account;
-    const accountsLen = Object.keys(accounts).length;
 
-    if (accountsLen >= 2) {
+    if (Object.keys(accounts).length >= 2) {
       if (accounts[ALL_ACCOUNT_ID] == null) {
         accounts[ALL_ACCOUNT_ID] = {
           image: allMailImg,
@@ -63,24 +46,12 @@ export class App extends React.Component<{}, State> {
       }
 
       let allLoaded = true;
-      for (let key in accounts) {
-        if (key != ALL_ACCOUNT_ID && !accounts[key].loaded) {
-          allLoaded = false;
-          break;
-        }
-      }
-
+      for (let key in accounts) if (key != ALL_ACCOUNT_ID && !accounts[key].loaded) allLoaded = false;
       accounts[ALL_ACCOUNT_ID].loaded = allLoaded;
+      accounts[ALL_ACCOUNT_ID].address = `${Object.keys(accounts).length - 1} Accounts Connected`;
     }
 
-    if (accountsLen > 2) {
-      accounts[ALL_ACCOUNT_ID].address = `${accountsLen - 1} Accounts Connected`;
-    }
-
-    this.setState({ 
-      accounts: accounts,
-      loc: { activeAccount: (accountsLen >= 2 ? ALL_ACCOUNT_ID : Object.keys(accounts)[0]) }
-    });
+    this.setState({ accounts: accounts });
   }
 
   loadAccountHandler(account: AccountProps) {
@@ -89,64 +60,21 @@ export class App extends React.Component<{}, State> {
 
     if (Object.keys(accounts).length > 2) {
       let allLoaded = true;
-      for (let key in accounts) {
-        if (key != ALL_ACCOUNT_ID && !accounts[key].loaded) {
-          allLoaded = false;
-          break;
-        }
-      }
+      for (let key in accounts) if (key != ALL_ACCOUNT_ID && !accounts[key].loaded) allLoaded = false;
       accounts[ALL_ACCOUNT_ID].loaded = allLoaded;
     }
 
     this.setState({ accounts: accounts });
   }
 
-  accountClickHandler(id: string, _: React.SyntheticEvent) {
-    if ((this.state.loc as AccountState).activeAccount != id) {
-      const accounts = Object.assign({}, this.state.accounts);
-      if (accounts[id]) accounts[id].hasUnread = false;
-
-      this.setState({ accounts, loc: { activeAccount: id }});
-      ipcRenderer.send('account-open', id);
-    }
-  }
-
-  refreshClickHandler(_id: string) {
-    // this.setState();
-
-    // setTimeout(() => this.setState({refreshing: false}), 1500);
-  }
-
   render() {
-
-    if ((this.state.loc as AccountState).activeAccount != undefined) {
-      let acct = this.state.loc as AccountState;
-      return (
-        <div className="App">
-          <AccountBar
-            accounts={this.state.accounts}
-            activeAccount={acct.activeAccount}
-            onClick={this.accountClickHandler}
-          />
-          {this.state.accounts[acct.activeAccount] != null && (
-            <AccountFrame 
-              account={this.state.accounts[acct.activeAccount]}
-              refreshClicked={this.refreshClickHandler}
-              refreshing={false} 
-            />
-          )}
-        </div>
-      );
-    }
-    else {
-      let settings = this.state.loc as SettingsState;
-      return (
-        <div className="App">
-          <SettingsView
-            page={settings.page}
-          />
-        </div>
-      );
-    }
+    return (
+      <div className="App">
+        {this.state.settings == "" ? 
+          <MainView accounts={this.state.accounts} /> : 
+          <SettingsView accounts={this.state.accounts} page={this.state.settings} /> 
+        }
+      </div>
+    );
   }
 }

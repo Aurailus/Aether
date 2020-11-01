@@ -1,6 +1,5 @@
 import * as React from 'react';
-//@ts-ignore
-import ReactCSSTransitionGroup from 'react-addons-css-transition-group';
+// import ReactCSSTransitionGroup from 'react-addons-css-transition-group';
 
 import './AccountConversationList.scss';
 
@@ -83,11 +82,11 @@ export class AccountConversationList extends React.Component<Props, {}> {
           onClick={this.boxesClicked}
         />*/}
 
-        <ReactCSSTransitionGroup
+{/*        <ReactCSSTransitionGroup
           transitionName="AccountConversationList-transition"
           transitionEnterTimeout={200}
           transitionLeaveTimeout={200}
-        >
+        >*/}
           {this.props.chains.map((conv, ind) => {
             let date = new Date(conv.lastMessageDate);
             date!.setHours(0, 0, 0, 0);
@@ -109,7 +108,7 @@ export class AccountConversationList extends React.Component<Props, {}> {
 
             return returns;
           })}
-        </ReactCSSTransitionGroup>
+        {/*</ReactCSSTransitionGroup>*/}
       </ul>
     );
   }

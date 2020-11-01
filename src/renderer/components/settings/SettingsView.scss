@@ -1,0 +1,14 @@
+@import '../../vars';
+
+.SettingsView {
+	display: grid;
+	position: relative;
+	grid-column: 1 / span 2; //TODO: The App grid should be in AccountFrame or something;
+	width: 100%;
+	height: 100%;
+	grid-template-columns: minmax(260px, 1.5fr) 800px 1fr;
+}
+
+.SettingsView-SidebarWrap {
+	background-color: $gray-1;
+}

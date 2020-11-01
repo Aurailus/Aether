@@ -1,6 +1,6 @@
 const Imap = require('imap');
 import { RawImap } from '../declarations/RawImap';
-import { ImapBox } from '../declarations/ImapBox';
+import { ImapBox, ImapBoxList, RawImapBox, RawImapBoxProps } from '../declarations/ImapBox';
 import { SerializedAccount } from '../../data/SerializedAccount';
 
 export class Lock {
@@ -46,8 +46,10 @@ export class ImapConn {
 	private lock: Lock;
 	private onFree: (conn: ImapConn) => void;
 	private connected: boolean = false;
+	private keepAlive: boolean = true;
 
-	private currentBox: ImapBox|null = null;
+	private boxList: ImapBoxList | null = null;
+	private openBox: ImapBox | null = null;
 
 	constructor(acct: SerializedAccount, onFree: (conn: ImapConn) => void) {
 		this.conn = new Imap({
@@ -75,8 +77,12 @@ export class ImapConn {
 
 				this.conn.once('close', (error: boolean) => {
 					if (error) throw "Connection closed with an error";
+
 					this.connected = false;
-					this.currentBox = null;
+					this.openBox = null;
+					this.boxList = null;
+
+					if (!this.keepAlive) return;
 					this.conn.connect();
 				});
 				
@@ -88,16 +94,25 @@ export class ImapConn {
 		});
 	}
 
+	disconnect() {
+		this.connected = false;
+		this.keepAlive = false;
+		this.openBox = null;
+		this.boxList = null;
+		this.conn.end();
+	}
+
 	//
 	// Get the list of boxes on the remote server.
 	//
-	async getBoxList(): Promise<{[key: string]: ImapBox}> {
+	async getBoxList(): Promise<ImapBoxList> {
 		await this.connect();
 
-		return new Promise((resolve: (boxList: {[key: string]: ImapBox}) => void, reject: (error: string) => void) => {
-			this.conn.getBoxes(async (e: string, boxList: {[key: string]: ImapBox}) => {
+		return new Promise((resolve: (boxes: ImapBoxList) => void, reject: (error: string) => void) => {
+			this.conn.getBoxes(async (e: string, rawBoxes: {[name: string]: RawImapBox}) => {
 				if (e) reject(`Failed to get box list, error: ${e}`);
-				resolve(boxList);
+				this.boxList = new ImapBoxList(rawBoxes);
+				resolve(this.boxList);
 			});
 		});
 	}
@@ -105,23 +120,29 @@ export class ImapConn {
 	// 
 	// Get the currently open box.
 	// 
-	getCurrentBox(): ImapBox|null {
-		return this.currentBox;
+	getCurrentBox(): ImapBox | null {
+		return this.openBox;
 	}
 
 	//
 	// Opens the requested box, and returns it.
 	//
-	private async useBox(box: string): Promise<ImapBox> {
+	private async useBox(path: string): Promise<ImapBox> {
 		const lock = this.lock.acquire();
 		await this.connect();
 
+		if (!this.boxList) await this.getBoxList();
+		let box = this.boxList!.findBox(path);
+		if (!box) throw "Box doesn't exist: " + path;
+
 		return new Promise((resolve: (box: ImapBox) => void, reject: (error: string) => void) => {
-			this.conn.openBox(box, false, (e: string, boxProps: ImapBox) => {
+			if (!box) reject("Box doesn't exist: " + path);
+
+			this.conn.openBox(path, false, (e: string, _rawBoxProps: RawImapBoxProps) => {
 				if (e) reject(`Failed to open box, error: ${e}`);
-				this.currentBox = boxProps;
+				this.openBox = box;
 				this.lock.release(lock);
-				resolve(boxProps);
+				resolve(box!);
 			});
 		});
 	}
@@ -132,7 +153,7 @@ export class ImapConn {
 	// If the conn is in use but not connected to the requested box, returns false.
 	//
 	async pleaseUseBox(box: string): Promise<boolean> {
-		if (this.currentBox && this.currentBox.name == box) {
+		if (this.openBox && this.openBox.name == box) {
 			this.lock.refresh();
 			return true;
 		}

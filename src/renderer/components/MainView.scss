@@ -1,8 +1,9 @@
 @import '../vars';
 
-.App {
+.MainView {
   background-color: $gray-2;
-  display: block;
+  grid-template-columns: 72px 1fr;
+  display: grid;
   overflow: hidden;
 
   width: 100%;

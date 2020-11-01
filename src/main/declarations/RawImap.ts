@@ -1,4 +1,4 @@
-import { ImapBox } from './ImapBox';
+import { RawImapBox } from './ImapBox';
 import { SerializedAccount } from '../../data/SerializedAccount';
 
 export declare class RawImap {
@@ -8,8 +8,10 @@ export declare class RawImap {
 	on(evt: string, cb: any): null;
 
 	connect(): null;
+	destroy(): null;
+	end(): null;
 	
-	getBoxes(cb: (err: string, boxes: { [key: string]: ImapBox }) => void): void;
+	getBoxes(cb: (err: string, boxes: { [key: string]: RawImapBox }) => void): void;
 	openBox(box: string, readOnly: boolean, cb: (err: string, box: any) => void): void;
 	
 	fetch(messages: number | string | number[], opts: any): any;

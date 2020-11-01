@@ -23,7 +23,7 @@ const createWindow = async () => {
 		await installExtensions();
 	}
 
-	win = new BrowserWindow({ width: 1366, height: 768, show: false });
+	win = new BrowserWindow({ width: 1366, height: 768, show: false, webPreferences: { nodeIntegration: true }});
 
 	if (process.env.NODE_ENV !== 'production') {
 		process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = '1';

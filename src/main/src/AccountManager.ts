@@ -45,7 +45,7 @@ export class AccountManager {
 		accounts.forEach((a) => this.addAccount(a));
 
 		if (accounts.length == 0) {
-			this.send.send('settings', 'account-create');
+			this.send.send('settings', 'accounts');
 			// Temporary to allow faster debugging
 			recv.on('reload', () => this.send.send('settings', 'account-create'));
 			return;
@@ -65,22 +65,27 @@ export class AccountManager {
 
 	async handleTestAccount(acct: SerializedAccount) {
 		let dead = false;
-		recv.once('test-cancel', () => (dead = true));
+		let kill = () => (dead = true);
+		recv.once('test-cancel', kill);
 
 		try {
 			let test = new ImapConn(acct, () => {});
 			await test.connect();
-
 			if (!dead) this.send.send('test-result', true, await test.getBoxList());
+			test.disconnect();
 		}
 		catch (e) {
 			if (!dead) this.send.send('test-result', false, e.message);
+		}
+		finally {
+			recv.removeListener('test-cancel', kill);
 		}
 	}
 
 	handleAccountOpen(id: string) {
 		for (const address in this.accounts) {
 			if (this.accounts[address].props.id === id) { 
+				console.log('found');
 				this.currentAccountKey = address;
 				break;
 			}

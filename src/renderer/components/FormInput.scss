@@ -24,6 +24,15 @@
 			margin-right: $padSize;
 		}
 	}
+
+	&.inl-50 {
+		display: inline-block;
+
+		&.pad {
+			width: calc(70% - #{$padSize});
+			margin-right: $padSize;
+		}
+	}
 	
 	.FormInput-Label {
 		user-select: none;

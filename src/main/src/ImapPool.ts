@@ -1,5 +1,5 @@
 import { ImapConn } from './ImapConn';
-import { ImapBox } from '../declarations/ImapBox';
+import { ImapBoxList } from '../declarations/ImapBox';
 import { SerializedAccount } from '../../data/SerializedAccount';
 
 export class ImapPool {
@@ -26,7 +26,7 @@ export class ImapPool {
 		await Promise.all(this.pool.map(async (conn: ImapConn) => await conn.connect()));
 	}
 
-	async getBoxList(): Promise<{[key: string]: ImapBox}> {
+	async getBoxList(): Promise<ImapBoxList> {
 		return await this.pool[0].getBoxList();
 	}
 

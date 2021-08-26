@@ -1,0 +1,69 @@
+{
+	"name": "@aether/client",
+	"version": "0.0.1",
+	"private": true,
+	"description": "Web Frontend / Electron Renderer for the Aether Mail software.",
+	"main": "build/Main.js",
+	"scripts": {
+		"dev": "webpack --watch --progress --config webpack.ts"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/Aurailus/Aether.git"
+	},
+	"keywords": [
+		"mail",
+		"email",
+		"cloud",
+		"aether"
+	],
+	"author": "Auri Collings",
+	"license": "UNLICENSED",
+	"bugs": {
+		"url": "https://github.com/Aurailus/Aether/issues"
+	},
+	"homepage": "https://github.com/Aurailus/Aether#readme",
+	"devDependencies": {
+		"@babel/core": "^7.14.3",
+		"@babel/plugin-proposal-class-properties": "^7.13.0",
+		"@babel/plugin-proposal-nullish-coalescing-operator": "^7.14.2",
+		"@babel/plugin-transform-react-jsx": "^7.14.3",
+		"@babel/preset-env": "^7.14.4",
+		"@babel/preset-typescript": "^7.13.0",
+		"@types/webpack": "^5.28.0",
+		"@types/webpack-merge": "^5.0.0",
+		"@typescript-eslint/eslint-plugin": "^4.26.1",
+		"@typescript-eslint/parser": "^4.26.1",
+		"autoprefixer": "^10.2.6",
+		"babel-loader": "^8.2.2",
+		"css-loader": "^5.2.6",
+		"css-minimizer-webpack-plugin": "^3.0.2",
+		"eslint": "^7.28.0",
+		"eslint-plugin-jsdoc": "^35.1.3",
+		"fork-ts-checker-webpack-plugin": "^6.2.10",
+		"mini-css-extract-plugin": "^2.2.0",
+		"postcss-extend": "^1.0.5",
+		"postcss-import": "^14.0.2",
+		"postcss-loader": "^5.3.0",
+		"postcss-nested": "^5.0.5",
+		"postcss-nested-vars": "^1.0.0",
+		"sugarss": "^3.0.3",
+		"tailwindcss": "^2.2.7",
+		"tailwindcss-interaction-variants": "^5.0.0",
+		"ts-node": "^10.0.0",
+		"typescript": "^4.3.2",
+		"webpack": "^5.38.1",
+		"webpack-cli": "^4.7.2",
+		"webpack-livereload-plugin": "^3.0.1",
+		"webpack-merge": "^5.8.0"
+	},
+	"dependencies": {
+		"common": "file:../common/build",
+		"@tailwindcss/typography": "^0.4.1",
+		"dayjs": "^1.10.6",
+		"preact": "^10.5.13",
+		"react-router-dom": "^5.2.0",
+		"tslib": "^2.2.0",
+		"vibin-hooks": "^0.2.0"
+	}
+}

@@ -1,0 +1,29 @@
+{
+	"compilerOptions": {
+		"strict": true,
+		"alwaysStrict": true,
+
+		"target": "es6",
+		"module": "commonjs",
+		"esModuleInterop": true,
+		"moduleResolution": "node",
+		"emitDecoratorMetadata": true,
+		"experimentalDecorators": true,
+
+		"typeRoots": [ "./node_modules/@types/" ],
+
+		"outDir": "./build",
+
+		"removeComments": true,
+		"noUnusedLocals": true,
+		"noImplicitReturns": true,
+		"noUnusedParameters": true,
+		"noFallthroughCasesInSwitch": true,
+	},
+	"include": [
+		"./src/**/*.ts"
+	],
+	"exclude": [
+		"./node_modules"
+	]
+}

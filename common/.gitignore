@@ -1,0 +1,5 @@
+!build/
+build/*
+
+!build/package.json
+!build/package_lock.json

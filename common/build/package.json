@@ -1,0 +1,30 @@
+{
+	"name": "@aether/common",
+	"version": "0.0.1",
+	"private": true,
+	"description": "Common definitions and utilities for the Aether Mail software.",
+	"main": "./Main.js",
+  "types": "./Main.d.ts",
+  "scripts": {
+    "prepublishOnly": "cd ../; npm run clean; npm run build"
+  },
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/Aurailus/Aether.git"
+	},
+	"keywords": [
+		"mail",
+		"email",
+		"cloud",
+		"aether"
+	],
+	"author": "Auri Collings <me@auri.xyz>",
+	"license": "UNLICENSED",
+	"bugs": {
+		"url": "https://github.com/Aurailus/Aether/issues"
+	},
+	"homepage": "https://github.com/Aurailus/Aether#readme",
+	"dependencies": {
+		"tslib": "^2.2.0"
+	}
+}

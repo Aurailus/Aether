@@ -30,5 +30,8 @@
   "bugs": {
     "url": "https://github.com/Aurailus/Aether/issues"
   },
-  "homepage": "https://github.com/Aurailus/Aether#readme"
+  "homepage": "https://github.com/Aurailus/Aether#readme",
+  "dependencies": {
+    "mongoose": "^5.13.8"
+  }
 }

@@ -1,0 +1,49 @@
+IMAP
+> Boxes
+  > Messages (ordered by uid)
+
+AETHER
+> Conversations
+  > (Parsed) Messages (indexed by MessageID)
+
+MONGO
+> Box
+	> BoxID
+	> UIDValidity
+	> UIDNext
+	> SeqNext
+	> ...
+
+> MsgUUID
+	> MessageID
+	> Box
+	> UID
+
+> Participant
+	Name
+	Image
+	Addresses
+	...
+
+> Messages
+	> MsgUUID
+	> Subject
+	> Participant[]
+	> Time
+	> ParsedContent
+
+> Conversations
+	> Title
+	> Archived
+	> LatestMessageTime
+	> Participant[]
+	> Messages[]
+
+Box
+SEQNO / UID / SUBJECT
+
+1 / 1: aaa
+2 / 3: bbb
+--- 3 / 7: ccc
+---
+--- 3 / 8: ddd

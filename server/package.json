@@ -7,7 +7,7 @@
 	"scripts": {
 		"dev": "nodemon",
 		"lint": "eslint -c .eslintrc.js src/**/*.ts",
-		"build": "tsc --project tsconfig.json"
+		"build": "tsc --project tsconfig.json --incremental"
 	},
 	"repository": {
 		"type": "git",
@@ -25,7 +25,7 @@
 			"src"
 		],
 		"ext": ".ts,.tsx,.html",
-		"exec": "npm run lint & npm run build && electron .",
+		"exec": "npm run lint & (npm run build && electron .)",
 		"quiet": true
 	},
 	"bugs": {
@@ -45,14 +45,14 @@
 		"eslint-plugin-jsdoc": "^36.0.8"
 	},
 	"dependencies": {
+		"@typegoose/typegoose": "^8.2.0",
 		"common": "file:../common/build",
 		"graphql": "^15.5.0",
 		"imap": "^0.8.19",
 		"log4js": "^6.3.0",
 		"md5": "^2.3.0",
-		"mongodb": "^4.1.1",
-		"mongoose": "^6.0.1",
-		"tslib": "^2.2.0",
-		"typegoose": "^5.9.1"
+		"mongodb": "^3.6.11",
+		"mongoose": "^5.13.8",
+		"tslib": "^2.2.0"
 	}
 }

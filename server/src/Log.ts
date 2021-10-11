@@ -20,17 +20,17 @@ log4js.configure({
 
 const logger = log4js.getLogger();
 
-const activePerfs: Record<string, [ number, number ]> = {};
+const activePerfs: Record<string, bigint> = {};
 
 const perfStart = (identifier: string) => {
-	activePerfs[identifier] = process.hrtime();
+	activePerfs[identifier] = process.hrtime.bigint();
 };
 
 const perfEnd = (identifier: string) => {
-	let perf = activePerfs[identifier];
-	if (!perf) logger.warn('Attempted to perf invalid identifier \'%s\'.', identifier);
+	let start = activePerfs[identifier];
+	if (!start) logger.warn('Attempted to perf invalid identifier \'%s\'.', identifier);
 	else {
-		const elapsed = process.hrtime(perf)[1] / 1000000;
+		const elapsed = Number((process.hrtime.bigint() - start) / BigInt(10000)) / 100;
 		// @ts-ignore
 		logger.perf('%s took %s ms.', identifier, elapsed.toFixed(3));
 		delete activePerfs[identifier];

@@ -68,6 +68,12 @@ export default function App() {
 						contacts={contacts[account.id]} conversation={conversation}/>}
 				</div>
 			</Fragment>}
+			{!account && <div class='grid place-items-center w-full bg-gray-50 pr-18'>
+				<div class='hue-rotate-180 brightness-50 saturate-25'>
+					<img src='../../client/res/logo.svg' width={256} height={256} alt='Loading'
+						class='w-[256px] h-[256px] animate-pulse grayscale sepia'/>
+				</div>
+			</div>}
 		</div>
 	);
 }

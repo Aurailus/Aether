@@ -1,6 +1,7 @@
 import md5 from 'md5';
 
-import RawImap, { MailBoxes as RawBoxes } from 'imap';
+import { MailboxType } from './data/Data';
+import RawImap, { MailBoxes as RawBoxes, Box as RawBox } from 'imap';
 
 /** Credentials and properties used to establish an IMAP connection. */
 
@@ -11,27 +12,6 @@ export interface ConnectionProperties {
 	port: number;
 	tls: boolean;
 }
-
-
-/**
- * Mailbox types (attributes).
- * Only the attributes relevant to Aether are included,
- * and some are named differently to better match interface language.
- */
-
-export enum MailboxType {
-	Box = 'NORMAL_BOX',
-	All = '\\All',
-	Archive = '\\Archive',
-	Drafts = '\\Drafts',
-	Starred = '\\Flagged',
-	Important = '\\Important',
-	Inbox = '\\Inbox',
-	Spam = '\\Junk',
-	Sent = '\\Sent',
-	Trash = '\\Trash'
-}
-
 
 /**
  * Message flags (keywords).
@@ -106,7 +86,7 @@ export interface Message {
  */
 
 export default class Imap {
-	private raw: RawImap;
+	raw: RawImap;
 	private connected: boolean = false;
 
 	private boxes: Mailbox[] = [];
@@ -189,9 +169,11 @@ export default class Imap {
 					for (let boxName in boxes) {
 						if ({}.hasOwnProperty.call(boxes, boxName)) {
 							const box = boxes[boxName];
+
 							const thisPath = path + boxName + box.delimiter;
 							const type = (box as any).special_use_attrib as MailboxType ??
-								(boxName === 'INBOX' ? MailboxType.Inbox : MailboxType.Box);
+								(boxName === 'INBOX' ? MailboxType.Inbox :
+									boxName.match(/^Archives?$/gi) !== null ? MailboxType.Archives : MailboxType.Box);
 							const thisTreeTypes = new Set([ ...treeTypes, type ]);
 
 							foundBoxes.push({
@@ -223,7 +205,7 @@ export default class Imap {
 	 * @returns a raw node-imap box instance.
 	 */
 
-	openBox(box: string): Promise<Mailbox> {
+	openBox(box: string): Promise<RawBox> {
 		return new Promise((resolve, reject) => {
 			if (!this.connected) reject('Cannot get box when the connection is closed.');
 
@@ -233,8 +215,9 @@ export default class Imap {
 					return;
 				}
 
+				resolve(box);
 				this.box = this.boxes.filter(b => b.path === box.name)[0];
-				resolve(this.box);
+				// resolve(this.box);
 			});
 		});
 	}
@@ -269,8 +252,9 @@ export default class Imap {
 			const id = parseInt(idStr, 10);
 			const headers = bodies[id].headers;
 			const attrs = bodies[id].attrs;
+			const messageId = headers['MESSAGE-ID'] || `HASH:${md5(attrs.date.toString())}:${md5(headers.SUBJECT)}`;
 
-			messages[headers['MESSAGE-ID']] = {
+			messages[messageId] = {
 				to: this.parseParticipants(headers.TO ?? ''),
 				from: this.parseParticipants(headers.FROM ?? '')[0],
 				subject: headers.SUBJECT,
@@ -278,7 +262,7 @@ export default class Imap {
 
 				id: id,
 				boxId: attrs.uid,
-				messageId: headers['MESSAGE-ID'] || `HASH:${md5(attrs.date.toString())}:${md5(headers.SUBJECT)}`,
+				messageId: messageId,
 				active: attrs.flags.has(MessageFlag.Active) || this.box!.type === MailboxType.Inbox,
 
 				replyTo: headers['IN-REPLY-TO'],
@@ -364,10 +348,10 @@ export default class Imap {
 	private parseParticipants(header: string): Participant[] {
 		return header.split(',').map(raw => {
 			const delimiter = raw.indexOf('<');
-			if (delimiter === -1) return { name: undefined, address: raw.trim() };
+			if (delimiter === -1) return { name: undefined, address: raw.trim().toLowerCase() };
 
 			const name = raw.substr(0, delimiter).replace(/^[\s'"]+/g, '').trim().replace(/[\s'"]+$/g, '');
-			const address = raw.substr(delimiter + 1).replace(/[<>]/g, '').replace(/^[\s'"]+/g, '').trim().replace(/[\s'"]+$/g, '');
+			const address = raw.substr(delimiter + 1).replace(/[<>]/g, '').replace(/^[\s'"]+/g, '').trim().replace(/[\s'"]+$/g, '').toLowerCase();
 
 			return { name: name ? name : undefined, address };
 		});
